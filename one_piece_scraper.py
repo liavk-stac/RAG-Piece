@@ -10,7 +10,6 @@ import csv
 import os
 import re
 import time
-from urllib.parse import urljoin, urlparse
 from pathlib import Path
 from datetime import datetime
 import unicodedata
@@ -18,9 +17,7 @@ import unicodedata
 
 def slugify(text):
     """Convert text to filesystem-safe string."""
-    # Normalize unicode characters
     text = unicodedata.normalize('NFKD', text)
-    # Convert to lowercase and replace spaces/special chars with underscores
     text = re.sub(r'[^\w\s-]', '', text)
     text = re.sub(r'[-\s]+', '_', text)
     return text.strip('_')
@@ -28,134 +25,207 @@ def slugify(text):
 
 def fetch_wiki_content(article_name):
     """Fetch article content from One Piece Wiki using MediaWiki API."""
-    base_url = "https://onepiece.fandom.com/api.php"
-    
-    # Get article content - remove section=0 to get the entire article
     params = {
         'action': 'parse',
         'page': article_name,
         'format': 'json',
-        'prop': 'sections|text|images'
+        'prop': 'text'
     }
     
     try:
-        response = requests.get(base_url, params=params, timeout=30)
+        response = requests.get("https://onepiece.fandom.com/api.php", params=params, timeout=30)
         response.raise_for_status()
         data = response.json()
-        
-        if 'error' in data:
-            print(f"Error fetching {article_name}: {data['error']['info']}")
-            return None
-            
-        return data['parse']
+        return data['parse'] if 'parse' in data else None
     except Exception as e:
         print(f"Failed to fetch {article_name}: {e}")
         return None
 
 
-def extract_sections(content_html):
-    """Extract subsections from HTML content."""
-    # Find subsection headers (h3) instead of main sections (h2)
-    section_pattern = r'<h3[^>]*>(.*?)</h3>'
-    sections = re.findall(section_pattern, content_html, re.DOTALL)
+def extract_anchors(content_html):
+    """Extract all anchor links to see what sections are available."""
+    # Look for both named anchors and section links
+    anchor_pattern = r'<a[^>]*name="([^"]*)"[^>]*>|<a[^>]*href="#([^"]*)"[^>]*>([^<]*)</a>|<span[^>]*id="([^"]*)"[^>]*>([^<]*)</span>'
+    anchors = re.findall(anchor_pattern, content_html)
     
-    # Extract content between subsections
+    # Also look for any div or span with id attributes
+    id_pattern = r'<(?:div|span)[^>]*id="([^"]*)"[^>]*>([^<]*)</(?:div|span)>'
+    id_elements = re.findall(id_pattern, content_html)
+    
+    # Look for section headers of any level
+    header_pattern = r'<h([1-6])[^>]*>(.*?)</h[1-6]>'
+    headers = re.findall(header_pattern, content_html, re.DOTALL)
+    
+    return {
+        'anchors': anchors,
+        'id_elements': id_elements,
+        'headers': headers
+    }
+
+
+def clean_text_content(text):
+    """Clean text content by removing wiki artifacts and formatting."""
+    # Remove HTML tags
+    clean = re.sub(r'<[^>]+>', '', text)
+    
+    # Remove bibliography labels and reference citations [1], [2], [42], etc.
+    clean = re.sub(r'\[\d+\]', '', clean)
+    
+    # Remove other common wiki artifacts
+    clean = re.sub(r'\[edit\]', '', clean)  # Remove edit links
+    clean = re.sub(r'\[citation needed\]', '', clean)  # Remove citation needed tags
+    clean = re.sub(r'\[who\?\]', '', clean)  # Remove who tags
+    clean = re.sub(r'\[when\?\]', '', clean)  # Remove when tags
+    clean = re.sub(r'\[where\?\]', '', clean)  # Remove where tags
+    clean = re.sub(r'\[clarification needed\]', '', clean)  # Remove clarification tags
+    
+    # Remove MediaWiki templates and functions
+    clean = re.sub(r'\{\{[^}]+\}\}', '', clean)  # Remove double-brace templates
+    clean = re.sub(r'\{\|[^}]+\|\}', '', clean)  # Remove table templates
+    
+    # Remove external link formatting
+    clean = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', clean)  # Convert [text](url) to just text
+    
+    # Remove multiple spaces and normalize whitespace
+    clean = re.sub(r'\s+', ' ', clean)
+    
+    # Remove leading/trailing whitespace
+    clean = clean.strip()
+    
+    return clean
+
+
+def extract_sections(content_html):
+    """Extract sections with hierarchical structure (h2 only) and MediaWiki sections."""
+    # First, let's see what's actually in the HTML
+    debug_info = extract_anchors(content_html)
+    print(f"Debug: Found {len(debug_info['headers'])} headers, {len(debug_info['anchors'])} anchors, {len(debug_info['id_elements'])} id elements")
+    
+    # Show what headers we found
+    for level, title in debug_info['headers'][:10]:  # Show first 10
+        print(f"  H{level}: {title.strip()}")
+    
     section_content = []
-    for i, section_title in enumerate(sections):
-        # Skip references and navigation sections
-        title_lower = section_title.lower().strip()
-        if any(skip_word in title_lower for skip_word in ['references', 'site navigation', 'external links', 'notes']):
-            continue
-            
-        # Find the start of this subsection
-        start_tag = f'<h3[^>]*>{re.escape(section_title)}</h3>'
-        start_match = re.search(start_tag, content_html)
+    skip_words = ['references', 'site navigation', 'external links', 'notes']
+    seen_titles = set()  # Track seen titles to avoid duplicates
+    
+    def clean_title(title):
+        """Clean HTML tags and extra content from section titles."""
+        # Remove HTML tags
+        clean = re.sub(r'<[^>]+>', '', title)
+        # Remove extra whitespace and normalize
+        clean = re.sub(r'\s+', ' ', clean).strip()
+        # Remove common MediaWiki artifacts
+        clean = re.sub(r'\[.*?\]', '', clean)  # Remove edit section brackets
+        clean = re.sub(r'\{.*?\}', '', clean)  # Remove templates
+        clean = re.sub(r'[^\w\s\-_]', '', clean)  # Keep only alphanumeric, spaces, hyphens, underscores
+        return clean.strip()
+    
+    def is_valid_title(title):
+        """Check if a title is valid for use as a filename."""
+        clean = clean_title(title)
+        # Skip if title is too short, too long, or contains obvious HTML artifacts
+        if len(clean) < 2 or len(clean) > 100:
+            return False
+        if any(word in clean.lower() for word in ['span', 'class', 'id', 'href', 'title']):
+            return False
+        if clean in seen_titles:
+            return False
+        return True
+    
+    # Find MediaWiki sections (span class="mw-headline")
+    mw_section_pattern = r'<span[^>]*class="mw-headline"[^>]*id="([^"]*)"[^>]*>([^<]*)</span>'
+    mw_sections = re.findall(mw_section_pattern, content_html)
+    
+    if mw_sections:
+        print(f"Found {len(mw_sections)} MediaWiki sections:")
+        for section_id, section_title in mw_sections[:5]:  # Show first 5
+            print(f"  MW: {section_title.strip()} (id: {section_id})")
         
-        if start_match:
-            start_pos = start_match.end()  # Start after the header
+        # Process MediaWiki sections
+        for i, (section_id, section_title) in enumerate(mw_sections):
+            section_title_lower = section_title.lower().strip()
+            if any(skip_word in section_title_lower for skip_word in skip_words):
+                continue
             
-            # Find the end (next h3 subsection or end of content)
-            if i + 1 < len(sections):
-                next_section_title = sections[i + 1]
-                next_start_tag = f'<h3[^>]*>{re.escape(next_section_title)}</h3>'
-                end_match = re.search(next_start_tag, content_html[start_pos:])
-                if end_match:
-                    end_pos = start_pos + end_match.start()
-                else:
-                    end_pos = len(content_html)
-            else:
-                end_pos = len(content_html)
+            # Clean and validate the title
+            clean_section_title = clean_title(section_title)
+            if not is_valid_title(clean_section_title):
+                continue
             
-            # Extract subsection content
-            section_html = content_html[start_pos:end_pos]
+            # Find the start of this section
+            section_start_tag = f'<span[^>]*class="mw-headline"[^>]*id="{re.escape(section_id)}"[^>]*>{re.escape(section_title)}</span>'
+            section_start_match = re.search(section_start_tag, content_html)
+            if not section_start_match:
+                continue
+                
+            section_start_pos = section_start_match.end()
+            section_end_pos = len(content_html)
             
-            # Clean HTML tags but preserve line breaks for readability
-            clean_text = re.sub(r'<br\s*/?>', '\n', section_html)
-            clean_text = re.sub(r'<[^>]+>', '', section_html)
-            clean_text = re.sub(r'\n\s*\n', '\n\n', clean_text)  # Clean up multiple line breaks
-            clean_text = clean_text.strip()
+            # Find the end (next MediaWiki section or end of content)
+            if i + 1 < len(mw_sections):
+                next_section_id, next_section_title = mw_sections[i + 1]
+                next_section_start_tag = f'<span[^>]*class="mw-headline"[^>]*id="{re.escape(next_section_id)}"[^>]*>{re.escape(next_section_title)}</span>'
+                section_end_match = re.search(next_section_start_tag, content_html[section_start_pos:])
+                if section_end_match:
+                    section_end_pos = section_start_pos + section_end_match.start()
+            
+            section_html = content_html[section_start_pos:section_end_pos]
+            clean_text = clean_text_content(section_html)
             
             if clean_text:
+                seen_titles.add(clean_section_title)
                 section_content.append({
-                    'id': f'subsection_{i}',
-                    'title': section_title.strip(),
+                    'combined_title': clean_section_title,
                     'content': clean_text
                 })
     
-    # If no h3 subsections found, try to find h2 sections as fallback
-    if not section_content:
-        h2_pattern = r'<h2[^>]*>(.*?)</h2>'
-        h2_sections = re.findall(h2_pattern, content_html, re.DOTALL)
+    # Also capture h2 sections (don't skip if MediaWiki sections were found)
+    h2_pattern = r'<h2[^>]*>(.*?)</h2>'
+    h2_sections = re.findall(h2_pattern, content_html, re.DOTALL)
+    
+    if h2_sections:
+        print(f"Found {len(h2_sections)} H2 sections:")
+        for h2_title in h2_sections[:5]:  # Show first 5
+            print(f"  H2: {h2_title.strip()}")
         
-        for i, section_title in enumerate(h2_sections):
-            # Skip references and navigation sections
-            title_lower = section_title.lower().strip()
-            if any(skip_word in title_lower for skip_word in ['references', 'site navigation', 'external links', 'notes']):
+        for h2_idx, h2_title in enumerate(h2_sections):
+            # Clean and validate the title
+            clean_h2_title = clean_title(h2_title)
+            if not is_valid_title(clean_h2_title):
+                continue
+            
+            h2_start_tag = f'<h2[^>]*>{re.escape(h2_title)}</h2>'
+            h2_start_match = re.search(h2_start_tag, content_html)
+            if not h2_start_match:
                 continue
                 
-            # Find the start of this section
-            start_tag = f'<h2[^>]*>{re.escape(section_title)}</h2>'
-            start_match = re.search(start_tag, content_html)
+            h2_start_pos = h2_start_match.end()
+            h2_end_pos = len(content_html)
             
-            if start_match:
-                start_pos = start_match.end()
-                
-                # Find the end (next h2 section or end of content)
-                if i + 1 < len(h2_sections):
-                    next_section_title = h2_sections[i + 1]
-                    next_start_tag = f'<h2[^>]*>{re.escape(next_section_title)}</h2>'
-                    end_match = re.search(next_start_tag, content_html[start_pos:])
-                    if end_match:
-                        end_pos = start_pos + end_match.start()
-                    else:
-                        end_pos = len(content_html)
-                else:
-                    end_pos = len(content_html)
-                
-                section_html = content_html[start_pos:end_pos]
-                clean_text = re.sub(r'<br\s*/?>', '\n', section_html)
-                clean_text = re.sub(r'<[^>]+>', '', section_html)
-                clean_text = re.sub(r'\n\s*\n', '\n\n', clean_text)
-                clean_text = clean_text.strip()
-                
-                if clean_text:
-                    section_content.append({
-                        'id': f'section_{i}',
-                        'title': section_title.strip(),
-                        'content': clean_text
-                    })
+            if h2_idx + 1 < len(h2_sections):
+                next_h2_title = h2_sections[h2_idx + 1]
+                next_h2_start_tag = f'<h2[^>]*>{re.escape(next_h2_title)}</h2>'
+                h2_end_match = re.search(next_h2_start_tag, content_html[h2_start_pos:])
+                if h2_end_match:
+                    h2_end_pos = h2_start_pos + h2_end_match.start()
+            
+            # Extract the entire h2 section content (including any h3 subsections within it)
+            h2_section_html = content_html[h2_start_pos:h2_end_pos]
+            clean_text = clean_text_content(h2_section_html)
+            
+            if clean_text:
+                seen_titles.add(clean_h2_title)
+                section_content.append({
+                    'combined_title': clean_h2_title,
+                    'content': clean_text
+                })
     
-    # If still no sections found, treat the entire content as one section
     if not section_content:
-        clean_text = re.sub(r'<br\s*/?>', '\n', content_html)
-        clean_text = re.sub(r'<[^>]+>', '', clean_text)
-        clean_text = re.sub(r'\n\s*\n', '\n\n', clean_text)
-        clean_text = clean_text.strip()
-        
+        clean_text = clean_text_content(content_html)
         if clean_text:
             section_content.append({
-                'id': 'content_0',
-                'title': 'Article Content',
+                'combined_title': 'Article Content',
                 'content': clean_text
             })
     
@@ -164,67 +234,45 @@ def extract_sections(content_html):
 
 def extract_tables(content_html):
     """Extract tables from HTML content."""
-    # Look for tables with captions or headers that can serve as labels
     table_pattern = r'(?:<caption[^>]*>(.*?)</caption>)?.*?<table[^>]*>(.*?)</table>'
     tables = re.findall(table_pattern, content_html, re.DOTALL)
     
     extracted_tables = []
-    for i, (caption, table_html) in enumerate(tables):
-        # Extract rows
+    for caption, table_html in tables:
         row_pattern = r'<tr[^>]*>(.*?)</tr>'
         rows = re.findall(row_pattern, table_html, re.DOTALL)
         
         table_data = []
         for row in rows:
-            # Extract cells
             cell_pattern = r'<t[dh][^>]*>(.*?)</t[dh]>'
             cells = re.findall(cell_pattern, row, re.DOTALL)
-            
             if cells:
-                # Clean cell content
-                clean_cells = []
-                for cell in cells:
-                    clean_cell = re.sub(r'<[^>]+>', '', cell)
-                    clean_cell = re.sub(r'\s+', ' ', clean_cell).strip()
-                    clean_cells.append(clean_cell)
+                clean_cells = [clean_text_content(cell) for cell in cells]
                 table_data.append(clean_cells)
         
         if table_data:
-            # Try to find a meaningful label for the table
             label = None
-            
-            # Use caption if available
             if caption:
-                label = re.sub(r'<[^>]+>', '', caption).strip()
+                label = clean_text_content(caption)
             
-            # If no caption, try to find a header above the table
             if not label:
-                # Look for headers (h1-h6) or strong text before the table
                 before_table = content_html[:content_html.find(table_html)]
                 header_pattern = r'<(?:h[1-6]|strong)[^>]*>(.*?)</(?:h[1-6]|strong)>'
                 headers = re.findall(header_pattern, before_table, re.DOTALL)
                 if headers:
-                    # Use the last header found before the table
-                    label = re.sub(r'<[^>]+>', '', headers[-1]).strip()
+                    label = clean_text_content(headers[-1])
             
-            # If still no label, use the first row as a potential label
             if not label and table_data and table_data[0]:
                 first_row_text = ' '.join(table_data[0])
-                if len(first_row_text) < 100:  # Only use if it's not too long
+                if len(first_row_text) < 100:
                     label = first_row_text
             
-            # Clean up the label
             if label:
-                label = re.sub(r'\s+', ' ', label).strip()
-                # Remove common wiki formatting
-                label = re.sub(r'\[.*?\]', '', label)  # Remove wiki links
-                label = re.sub(r'\{.*?\}', '', label)  # Remove wiki templates
-                label = re.sub(r'[^\w\s\-_]', '', label)  # Keep only alphanumeric, spaces, hyphens, underscores
-                label = label.strip()
+                label = re.sub(r'[^\w\s\-_]', '', re.sub(r'\{.*?\}', '', re.sub(r'\[.*?\]', '', label))).strip()
             
             extracted_tables.append({
                 'data': table_data,
-                'label': label or f'Table_{i+1}'
+                'label': label or 'Table'
             })
     
     return extracted_tables
@@ -235,20 +283,13 @@ def extract_images(content_html):
     img_pattern = r'<img[^>]*src="([^"]*)"[^>]*alt="([^"]*)"[^>]*width="([^"]*)"[^>]*height="([^"]*)"[^>]*>'
     images = re.findall(img_pattern, content_html)
     
-    # Filter for One Piece Wiki images with size > 20x20
     wiki_images = []
     for i, (img_url, alt_text, width, height) in enumerate(images):
-        if 'static.wikia.nocookie.net' in img_url or 'vignette.wikia.nocookie.net' in img_url:
-            # Skip the first image of the article
-            if i == 0:
-                continue
-                
-            # Check if dimensions are available and > 20x20
+        if ('static.wikia.nocookie.net' in img_url or 'vignette.wikia.nocookie.net' in img_url) and i > 0:
             try:
                 w = int(width) if width else 0
                 h = int(height) if height else 0
                 if w > 20 and h > 20:
-                    # Use alt text as label if available, otherwise use URL
                     label = alt_text.strip() if alt_text.strip() else f"Image_{len(wiki_images)+1}"
                     wiki_images.append({
                         'url': img_url,
@@ -257,7 +298,6 @@ def extract_images(content_html):
                         'height': h
                     })
             except (ValueError, TypeError):
-                # If dimensions can't be parsed, assume it's large enough
                 label = alt_text.strip() if alt_text.strip() else f"Image_{len(wiki_images)+1}"
                 wiki_images.append({
                     'url': img_url,
@@ -269,60 +309,19 @@ def extract_images(content_html):
     return wiki_images
 
 
-def download_image(img_url, save_path):
-    """Download image from URL."""
-    try:
-        response = requests.get(img_url, timeout=30)
-        response.raise_for_status()
-        
-        with open(save_path, 'wb') as f:
-            f.write(response.content)
-        return True
-    except Exception as e:
-        print(f"Failed to download image {img_url}: {e}")
-        return False
-
-
-def save_csv(data, file_path):
-    """Save table data as CSV."""
-    try:
-        with open(file_path, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.writer(f)
-            writer.writerows(data)
-        return True
-    except Exception as e:
-        print(f"Failed to save CSV {file_path}: {e}")
-        return False
-
-
-def save_text(content, file_path):
-    """Save text content to file."""
-    try:
-        with open(file_path, 'w', encoding='utf-8') as f:
-            f.write(content)
-        return True
-    except Exception as e:
-        print(f"Failed to save text {file_path}: {e}")
-        return False
-
-
 def scrape_article(article_name):
     """Main function to scrape a single article."""
     print(f"Scraping article: {article_name}")
     
-    # Fetch content
     content_data = fetch_wiki_content(article_name)
     if not content_data:
         return False
     
-    # Create data folder and article folder
     data_folder = Path("data")
     data_folder.mkdir(exist_ok=True)
-    safe_name = slugify(article_name)
-    article_folder = data_folder / safe_name
+    article_folder = data_folder / slugify(article_name)
     article_folder.mkdir(exist_ok=True)
     
-    # Extract content
     sections = extract_sections(content_data['text']['*'])
     tables = extract_tables(content_data['text']['*'])
     images = extract_images(content_data['text']['*'])
@@ -331,36 +330,48 @@ def scrape_article(article_name):
     
     # Save sections
     for i, section in enumerate(sections, 1):
-        filename = f"{i:02d}_{slugify(section['title'])}.txt"
+        filename = f"{i:02d}_{slugify(section['combined_title'])}.txt"
         file_path = article_folder / filename
         
-        if save_text(section['content'], file_path):
+        try:
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(section['content'])
             created_files.append(filename)
             print(f"  Saved section: {filename}")
+        except Exception as e:
+            print(f"Failed to save {filename}: {e}")
     
     # Save tables
-    for i, table_info in enumerate(tables, 1):
-        # Create filename from label, sanitized for filesystem
+    for table_info in tables:
         safe_label = slugify(table_info['label'])
         filename = f"{safe_label}.csv"
         file_path = article_folder / filename
         
-        if save_csv(table_info['data'], file_path):
+        try:
+            with open(file_path, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f)
+                writer.writerows(table_info['data'])
             created_files.append(filename)
             print(f"  Saved table: {filename}")
+        except Exception as e:
+            print(f"Failed to save {filename}: {e}")
     
     # Download images
-    for i, img_data in enumerate(images, 1):
-        # Create filename from label, sanitized for filesystem
+    for img_data in images:
         safe_label = slugify(img_data['label'])
         filename = f"{safe_label}.png"
         file_path = article_folder / filename
         
-        if download_image(img_data['url'], file_path):
+        try:
+            response = requests.get(img_data['url'], timeout=30)
+            response.raise_for_status()
+            with open(file_path, 'wb') as f:
+                f.write(response.content)
             created_files.append(filename)
             print(f"  Downloaded image: {filename} ({img_data['width']}x{img_data['height']})")
+        except Exception as e:
+            print(f"Failed to download {filename}: {e}")
         
-        # Rate limiting
         time.sleep(1)
     
     # Save metadata
@@ -371,9 +382,8 @@ def scrape_article(article_name):
         'created_files': created_files
     }
     
-    metadata_path = article_folder / 'metadata.json'
     try:
-        with open(metadata_path, 'w', encoding='utf-8') as f:
+        with open(article_folder / 'metadata.json', 'w', encoding='utf-8') as f:
             json.dump(metadata, f, indent=2, ensure_ascii=False)
         print(f"  Saved metadata: metadata.json")
     except Exception as e:
@@ -383,20 +393,33 @@ def scrape_article(article_name):
     return True
 
 
+def clear_data_folder():
+    """Clear the data folder before starting fresh scraping."""
+    data_folder = Path("data")
+    if data_folder.exists():
+        print("Clearing previous data folder...")
+        try:
+            import shutil
+            shutil.rmtree(data_folder)
+            print("  Previous data folder cleared successfully")
+        except Exception as e:
+            print(f"  Warning: Could not clear data folder: {e}")
+    else:
+        print("No previous data folder found, starting fresh")
+
+
 def main():
     """Main function to scrape all articles."""
-    # Hard-coded list of One Piece Wiki articles
-    articles = [
-        "Monkey D. Luffy",
-        "Roronoa Zoro",
-        "Nami"
-    ]
+    articles = ["Monkey D. Luffy", "Roronoa Zoro", "Nami"]
     
     print("One Piece Wiki Scraper")
     print("=" * 30)
     
-    successful = 0
-    failed = 0
+    # Clear previous data before starting
+    clear_data_folder()
+    print()
+    
+    successful = failed = 0
     
     for article in articles:
         try:
@@ -407,14 +430,10 @@ def main():
         except Exception as e:
             print(f"Error processing {article}: {e}")
             failed += 1
-        
-        # Rate limiting between articles
         time.sleep(1)
     
     print("\n" + "=" * 30)
-    print(f"Scraping completed!")
-    print(f"Successful: {successful}")
-    print(f"Failed: {failed}")
+    print(f"Scraping completed! Successful: {successful}, Failed: {failed}")
 
 
 if __name__ == "__main__":
