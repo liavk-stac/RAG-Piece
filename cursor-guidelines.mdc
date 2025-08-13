@@ -1,0 +1,75 @@
+# Cursor Coding Guidelines
+
+## General Principles
+1. **Readability First**
+   - Use clear, descriptive names for variables, functions, and classes.
+   - Follow consistent naming conventions:
+     - `snake_case` for variables and functions
+     - `PascalCase` for classes
+   - Keep functions short — ideally **under 30 lines**.
+   - Comment only where necessary to explain *why* the code does something, not *what* it does.
+
+2. **Modular Structure**
+   - Split code into small, reusable functions, each with a single responsibility.
+   - Group related functions and classes into separate files/modules.
+   - Avoid repetition — extract repeated code into helper functions or utilities.
+
+3. **Simplicity**
+   - Prefer simple, direct solutions over clever but hard-to-read code.
+   - Avoid deep nesting — use early returns or helper functions.
+   - Minimize and carefully choose dependencies.
+
+4. **Scalability**
+   - Design code to be flexible — avoid hard-coded values where parameters can be used.
+   - Separate business logic from UI or I/O logic.
+   - Write code that can be extended without modifying existing logic (Open/Closed Principle).
+
+---
+
+## Special Instructions
+1. **Tests and Demos**
+   - Only create unit tests, integration tests, or demo scripts if **explicitly requested**.
+   - If not requested, **do not** create `tests/` or demo code.
+
+2. **Logging**
+   - Always include **informative log messages** for key events, errors, and critical operations.
+   - Log to both console (if appropriate) and to a **dedicated log file** inside a `logs/` directory.
+   - Include timestamps, severity levels (INFO, WARNING, ERROR), and relevant context in logs.
+
+3. **Project Structure**
+   - Follow conventional Python project structure:
+     ```
+     project_root/
+       src/
+         package_name/
+           __init__.py
+           ...source files...
+       logs/
+       requirements.txt
+       README.md
+     ```
+   - All executable code must be inside `src/` (no loose scripts at the root).
+
+4. **Dependencies**
+   - Always generate a **`requirements.txt`** file containing all external dependencies.
+   - Whenever new imports from external packages are added or removed in the code, automatically update `requirements.txt` to match.
+   - Keep it minimal — include only what's needed.
+
+5. **Error Handling**
+   - Validate all inputs before processing.
+   - Use `try/except` blocks for operations that may fail.
+   - Provide clear, actionable error messages.
+   - Never silently fail — log all exceptions with stack traces.
+
+6. **Code Style**
+   - Follow **PEP 8** style guide (Python) unless otherwise specified.
+   - Use consistent formatting and linting.
+   - Keep commit messages clear and descriptive.
+
+---
+
+## Summary
+- Write **clean, modular, scalable, and maintainable code**.
+- Always include logging, conventional structure, and `requirements.txt`.
+- Automatically update `requirements.txt` when imports change.
+- **Do not** add tests/demos unless explicitly told.
