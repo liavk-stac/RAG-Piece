@@ -1,0 +1,21 @@
+# One Piece Wiki Scraper Update
+
+## Goal
+Update the current One Piece Wiki scraper so that when given a main article title, it:
+1. Fetches the main article content via the MediaWiki API.
+2. Detects all related sub-articles (e.g., `Monkey D. Luffy/History`, `Monkey D. Luffy/Powers_and_Abilities`).
+3. Fetches each sub-article via the API.
+4. Merges them into the final output in order.
+
+## Requirements
+- Use the [One Piece Wiki API](https://onepiece.fandom.com/api.php).
+- Keep everything in one Python file except for `requirements.txt`.
+- Maintain the scraper’s existing functionality for the main article.
+- Ensure sub-article fetching happens automatically without manual list creation.
+
+## Implementation Steps
+1. **Fetch Main Article**  
+   Use:
+   ```http
+   GET https://onepiece.fandom.com/api.php?action=parse&page=<ARTICLE_TITLE>&prop=text&format=json
+
