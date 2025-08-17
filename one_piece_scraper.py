@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
 """One Piece Wiki Scraper - Fetches articles from One Piece Wiki and saves content locally."""
 
-import requests, json, csv, re, time, shutil
+import requests
+import re
+import time
+import shutil
 from pathlib import Path
 from datetime import datetime
 import unicodedata
 from PIL import Image
 import io
+
+# Import RAG database components
+from db_creator import RAGDatabase, RAGConfig
 
 
 def slugify(text):
@@ -256,26 +262,30 @@ def find_sub_articles(article_name):
         return []
 
 
-def scrape_article(article_name, scrape_csv_files=True, max_img=20):
-    """Main function to scrape a single article and its sub-articles."""
+def scrape_article(article_name, rag_database, max_img=20):
+    """Main function to scrape a single article and process directly into RAG database."""
     print(f"Scraping article: {article_name}")
     
-    # Create main article folder
-    article_folder = Path("data") / slugify(article_name)
-    article_folder.mkdir(parents=True, exist_ok=True)
+    # Create images folder only (no text files saved)
+    images_folder = Path("data") / "images" / slugify(article_name)
+    images_folder.mkdir(parents=True, exist_ok=True)
     
     # Find and scrape sub-articles first
     sub_articles = find_sub_articles(article_name)
-    all_sections, all_tables, all_images, created_files = [], [], [], []
-    processed_sections, processed_tables, processed_images = set(), set(), set()
+    all_sections, all_images, created_files = [], [], []
+    processed_sections, processed_images = set(), set()
+    all_chunks = []  # Collect all chunks for database
     
     # Scrape main article
     main_content = fetch_wiki_content(article_name)
     if main_content:
-        print(f"  Processing main article content...")
+        print("  Processing main article content...")
         main_sections = extract_sections(main_content['text']['*'])
-        main_tables = extract_tables(main_content['text']['*']) if scrape_csv_files else []
         main_images = extract_images(main_content['text']['*'], max_img)
+        
+        # Process sections directly into chunks (no file saving)
+        main_chunks = rag_database.process_sections_directly(main_sections, article_name)
+        all_chunks.extend(main_chunks)
         
         # Add main article content to collections
         for section in main_sections:
@@ -284,20 +294,13 @@ def scrape_article(article_name, scrape_csv_files=True, max_img=20):
                 processed_sections.add(section_key)
                 all_sections.append(section)
         
-        for table in main_tables:
-            table_key = f"main_{table['label']}"
-            if table_key not in processed_tables:
-                processed_tables.add(table_key)
-                all_tables.append(table)
-        
         for image in main_images:
             image_key = f"main_{image['label']}"
             if image_key not in processed_images:
                 processed_images.add(image_key)
                 all_images.append(image)
         
-        table_info = f"{len(main_tables)} tables" if scrape_csv_files else "tables disabled"
-        print(f"  Main article: {len(main_sections)} sections, {table_info}, {len(main_images)} images (limited to {max_img}, min size 100x100)")
+        print(f"  Main article: {len(main_sections)} sections, {len(main_chunks)} chunks, {len(main_images)} images (limited to {max_img}, min size 100x100)")
     
     # Scrape sub-articles
     for sub_article in sub_articles:
@@ -305,8 +308,14 @@ def scrape_article(article_name, scrape_csv_files=True, max_img=20):
         sub_content = fetch_wiki_content(sub_article)
         if sub_content:
             sub_sections = extract_sections(sub_content['text']['*'])
-            sub_tables = extract_tables(sub_content['text']['*']) if scrape_csv_files else []
             sub_images = extract_images(sub_content['text']['*'], max_img)
+            
+            # Extract sub-article name (e.g., "Gallery" from "Arabasta Kingdom/Gallery")
+            sub_article_name = sub_article.split('/')[-1] if '/' in sub_article else None
+            
+            # Process sections directly into chunks
+            sub_chunks = rag_database.process_sections_directly(sub_sections, article_name, sub_article_name)
+            all_chunks.extend(sub_chunks)
             
             # Add sub-article content to collections (avoiding duplicates)
             for section in sub_sections:
@@ -315,46 +324,17 @@ def scrape_article(article_name, scrape_csv_files=True, max_img=20):
                     processed_sections.add(section_key)
                     all_sections.append(section)
             
-            for table in sub_tables:
-                table_key = f"sub_{sub_article}_{table['label']}"
-                if table_key not in processed_tables:
-                    processed_tables.add(table_key)
-                    all_tables.append(table)
-            
             for image in sub_images:
                 image_key = f"sub_{sub_article}_{image['label']}"
                 if image_key not in processed_images:
                     processed_images.add(image_key)
                     all_images.append(image)
             
-            table_info = f"{len(sub_tables)} tables" if scrape_csv_files else "tables disabled"
-            print(f"    Sub-article: {len(sub_sections)} sections, {table_info}, {len(sub_images)} images (limited to {max_img}, min size 100x100)")
+            print(f"    Sub-article: {len(sub_sections)} sections, {len(sub_chunks)} chunks, {len(sub_images)} images (limited to {max_img}, min size 100x100)")
             time.sleep(1)  # Rate limiting
     
-    # Save all sections
-    for i, section in enumerate(all_sections, 1):
-        filename = f"{i:02d}_{slugify(section['combined_title'])}.txt"
-        try:
-            with open(article_folder / filename, 'w', encoding='utf-8') as f:
-                f.write(section['content'])
-            created_files.append(filename)
-            print(f"  Saved section: {filename}")
-        except Exception as e:
-            print(f"Failed to save {filename}: {e}")
-    
-    # Save all tables (only if CSV scraping is enabled)
-    if scrape_csv_files and all_tables:
-        for table_info in all_tables:
-            filename = f"{slugify(table_info['label'])}.csv"
-            try:
-                with open(article_folder / filename, 'w', newline='', encoding='utf-8') as f:
-                    csv.writer(f).writerows(table_info['data'])
-                created_files.append(filename)
-                print(f"  Saved table: {filename}")
-            except Exception as e:
-                print(f"Failed to save {filename}: {e}")
-    elif not scrape_csv_files:
-        print("  CSV table extraction disabled - skipping table saving")
+    # Skip saving text files and CSV tables - content processed directly into chunks
+    print(f"  Sections processed directly into {len(all_chunks)} chunks (no text files saved)")
     
     # Download all images
     print(f"  Downloading {len(all_images)} images (limited to {max_img} per article, min size 100x100)...")
@@ -372,9 +352,9 @@ def scrape_article(article_name, scrape_csv_files=True, max_img=20):
                 
                 # Only save images that are at least 100x100 pixels
                 if width >= 100 and height >= 100:
-                    with open(article_folder / filename, 'wb') as f:
+                    with open(images_folder / filename, 'wb') as f:
                         f.write(response.content)
-                    created_files.append(filename)
+                    created_files.append(f"images/{slugify(article_name)}/{filename}")
                     downloaded_images.append(filename)
                     print(f"    Downloaded: {filename} ({width}x{height}) - Label: {img_data['label']}")
                 else:
@@ -382,9 +362,9 @@ def scrape_article(article_name, scrape_csv_files=True, max_img=20):
             except Exception as img_error:
                 print(f"    Failed to check dimensions for {filename}: {img_error}")
                 # If we can't check dimensions, save anyway
-                with open(article_folder / filename, 'wb') as f:
+                with open(images_folder / filename, 'wb') as f:
                     f.write(response.content)
-                created_files.append(filename)
+                created_files.append(f"images/{slugify(article_name)}/{filename}")
                 downloaded_images.append(filename)
                 print(f"    Downloaded: {filename} (dimensions unknown) - Label: {img_data['label']}")
                 
@@ -394,63 +374,78 @@ def scrape_article(article_name, scrape_csv_files=True, max_img=20):
     
     print(f"    Successfully downloaded {len(downloaded_images)} images out of {len(all_images)} found")
     
-    # Save metadata
-    try:
-        metadata = {
-            'article_name': article_name,
-            'article_url': f"https://onepiece.fandom.com/wiki/{article_name.replace(' ', '_')}",
-            'sub_articles': sub_articles,
-            'download_timestamp': datetime.now().isoformat(),
-            'created_files': created_files,
-            'csv_extraction_enabled': scrape_csv_files,
-            'total_sections': len(all_sections),
-            'total_tables': len(all_tables) if scrape_csv_files else 0,
-            'total_images_found': len(all_images),
-            'total_images_downloaded': len(downloaded_images)
-        }
-        with open(article_folder / 'metadata.json', 'w', encoding='utf-8') as f:
-            json.dump(metadata, f, indent=2, ensure_ascii=False)
-        print(f"  Saved metadata: metadata.json")
-    except Exception as e:
-        print(f"Failed to save metadata: {e}")
+    # Return chunks and metadata for database building
+    scraping_metadata = {
+        'article_name': article_name,
+        'article_url': f"https://onepiece.fandom.com/wiki/{article_name.replace(' ', '_')}",
+        'sub_articles': sub_articles,
+        'download_timestamp': datetime.now().isoformat(),
+        'total_sections': len(all_sections),
+        'total_chunks': len(all_chunks),
+        'total_images_found': len(all_images),
+        'total_images_downloaded': len(downloaded_images),
+        'images_folder': f'data/images/{slugify(article_name)}'
+    }
     
-    print(f"Completed scraping: {article_name} (with {len(sub_articles)} sub-articles)")
-    return True
+    print(f"Completed scraping: {article_name} (with {len(sub_articles)} sub-articles, {len(all_chunks)} chunks)")
+    return all_chunks, scraping_metadata
+
 
 
 def main():
-    """Main function to scrape all articles."""
+    """Main function to scrape articles and build RAG database."""
     # Configuration flags
-    SCRAPE_CSV_FILES = False  # Set to False to skip CSV table extraction
     MAX_IMAGES = 20  # Maximum number of images to scrape per article
     
     articles = ["Arabasta Kingdom"]
     
-    print("One Piece Wiki Scraper")
-    print("=" * 30)
-    print(f"Configuration:")
-    print(f"  - Scrape CSV files (tables): {SCRAPE_CSV_FILES}")
+    print("One Piece Wiki Scraper + RAG Database Builder")
+    print("=" * 50)
+    print("Configuration:")
     print(f"  - Maximum images per article: {MAX_IMAGES}")
+    print("  - Direct processing: text → chunks → database (no intermediate files)")
     print()
     
-    # Clear previous data
+    # Initialize RAG database
+    rag_config = RAGConfig()
+    rag_db = RAGDatabase(rag_config)
+    
+    print("RAG Configuration:")
+    print(f"  - Chunking: {rag_config.MIN_CHUNK_SIZE}-{rag_config.MAX_CHUNK_SIZE} tokens (target: {rag_config.TARGET_CHUNK_SIZE})")
+    print(f"  - Keywords: {rag_config.KEYWORDS_PER_CHUNK} per chunk using BM25 scoring")
+    print(f"  - Embedding model: {rag_config.EMBEDDING_MODEL}")
+    print()
+    
+    # Clear previous data (keep existing images if desired)
     data_folder = Path("data")
     if data_folder.exists():
         print("Clearing previous data folder...")
         try:
-            shutil.rmtree(data_folder)
-            print("  Previous data folder cleared successfully")
+            # Remove everything except images folder if it exists
+            for item in data_folder.iterdir():
+                if item.name != "images":
+                    if item.is_dir():
+                        shutil.rmtree(item)
+                    else:
+                        item.unlink()
+            print("  Previous data cleared (kept images folder)")
         except Exception as e:
             print(f"  Warning: Could not clear data folder: {e}")
     else:
         print("No previous data folder found, starting fresh")
     print()
     
-    # Scrape articles
+    # Scrape articles and collect all chunks
+    all_chunks = []
+    all_metadata = []
     successful = failed = 0
+    
     for article in articles:
         try:
-            if scrape_article(article, scrape_csv_files=SCRAPE_CSV_FILES, max_img=MAX_IMAGES):
+            chunks, metadata = scrape_article(article, rag_db, max_img=MAX_IMAGES)
+            if chunks:
+                all_chunks.extend(chunks)
+                all_metadata.append(metadata)
                 successful += 1
             else:
                 failed += 1
@@ -459,8 +454,55 @@ def main():
             failed += 1
         time.sleep(1)
     
-    print("\n" + "=" * 30)
+    print("\n" + "=" * 50)
     print(f"Scraping completed! Successful: {successful}, Failed: {failed}")
+    print(f"Total chunks collected: {len(all_chunks)}")
+    
+    # Build RAG database from collected chunks
+    if all_chunks:
+        print("\nBuilding RAG database from scraped content...")
+        try:
+            chunk_count = rag_db.build_indices_from_chunks(all_chunks)
+            print(f"\n✓ RAG Database built successfully!")
+            print(f"  - {chunk_count} chunks indexed")
+            print(f"  - Whoosh index: {rag_db.db_path}/whoosh_index/")
+            print(f"  - FAISS index: {rag_db.db_path}/faiss_index.bin")
+            print("  - Images saved to: data/images/")
+            
+            # Test search functionality
+            print("\n" + "=" * 50)
+            print("Testing search functionality...")
+            
+            test_queries = [
+                "What is Arabasta Kingdom?",
+                "Tell me about the desert in Arabasta",
+                "Who are the main characters in Arabasta?"
+            ]
+            
+            for query in test_queries:
+                print(f"\nTest query: '{query}'")
+                try:
+                    results = rag_db.search(query, top_k=3)
+                    print(f"  Found {len(results)} results")
+                    
+                    for i, result in enumerate(results, 1):
+                        print(f"    {i}. {result['search_metadata']['section_name']} "
+                              f"(BM25: {result['bm25_score']:.3f}, "
+                              f"Semantic: {result['semantic_score']:.3f}, "
+                              f"Combined: {result['combined_score']:.3f})")
+                        print(f"       {result['content'][:100]}...")
+                
+                except Exception as e:
+                    print(f"  Search error: {e}")
+                    
+        except Exception as e:
+            print(f"Error building RAG database: {e}")
+            return False
+    else:
+        print("\nNo chunks collected - database not built")
+        return False
+    
+    return True
 
 
 if __name__ == "__main__":

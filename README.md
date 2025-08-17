@@ -1,225 +1,173 @@
-# One Piece Wiki Scraper
+# One Piece Wiki RAG Database System
 
-A comprehensive Python script that scrapes articles from the One Piece Wiki and saves content, tables, and images locally. The scraper automatically detects and includes sub-articles for complete character coverage.
+A comprehensive **Retrieval-Augmented Generation (RAG)** system that scrapes One Piece Wiki content and creates an intelligent, searchable database using both keyword (BM25) and semantic search technologies.
 
-## Features
+## 🚀 Key Features
 
-### Core Functionality
-- **Main Article Scraping**: Fetches complete article content using the MediaWiki API
-- **Sub-Article Discovery**: Automatically finds and scrapes related sub-articles (e.g., "Monkey D. Luffy/History")
-- **Comprehensive Content Extraction**: Captures sections, tables, and images from both main articles and sub-articles
-- **Duplicate Prevention**: Intelligent deduplication to avoid content overlap between main and sub-articles
-- **Configurable Scraping**: Control which content types to extract (CSV tables, images, sections)
+### **Integrated Pipeline**
+- **One Command Operation**: Scraping → Chunking → Database Creation → Search Ready
+- **No Intermediate Files**: Direct processing from web to searchable database
+- **Smart Content Processing**: Hybrid chunking with paragraph-based splitting
+- **Automatic Image Management**: High-quality image downloads with filtering
 
-### Content Processing
-- **Dual Section Detection**: Extracts both MediaWiki sections (`<span class="mw-headline">`) and traditional HTML sections (`<h2>`)
-- **Smart Text Cleaning**: Removes HTML tags, bibliography labels `[1][2][3]`, MediaWiki templates, and other artifacts
-- **Navigation Filtering**: Automatically skips non-content sections like "Site Navigation", "References", "External Links"
-- **Clean Filenames**: Generates filesystem-safe names without HTML artifacts or special characters
+### **Advanced Search Capabilities**
+- **Two-Step Retrieval**: BM25 keyword search + semantic similarity ranking
+- **Natural Language Queries**: Ask questions like "What is Arabasta Kingdom?"
+- **Field Boosting**: Weighted search across titles, sections, and content
+- **Query Fallback**: Robust handling of complex questions with multiple strategies
 
-### Data Organization
-- **Structured Output**: Creates organized folder structure for each character
-- **CSV Tables**: Saves tables with clean, descriptive filenames (configurable)
-- **High-Quality Images**: Downloads images with size filtering and configurable limits
-- **Comprehensive Metadata**: Tracks sub-articles, file counts, and timestamps
+### **Intelligent Content Organization**
+- **Metadata-Rich Chunks**: Article names, sections, sub-sections, and keywords
+- **Hierarchical Search**: Article titles > Sub-articles > Sections > Sub-sections > Keywords > Content
+- **Context Preservation**: Maintains document structure and relationships
 
-### Technical Features
-- **Rate Limiting**: Implements delays to respect API limits
-- **Error Handling**: Graceful failure handling with detailed logging
-- **Clean Data Folder**: Automatically clears previous runs for fresh data
-- **Unicode Support**: Proper handling of special characters and accents
-- **Image Dimension Validation**: Checks image sizes before downloading
+## 🛠️ Technology Stack
 
-## Configuration Options
+- **Web Scraping**: MediaWiki API integration
+- **Keyword Search**: Whoosh with BM25F scoring and field boosting
+- **Semantic Search**: FAISS with sentence-transformers embeddings
+- **Text Processing**: NLTK for tokenization, keyword extraction, and analysis
+- **Image Processing**: PIL for validation and quality filtering
 
-### CSV Table Extraction
-- **Control Flag**: `SCRAPE_CSV_FILES` - Set to `False` to skip CSV table extraction
-- **Default**: `False` (tables are not extracted by default)
-- **Use Case**: Useful when you only need text content and images
+## 📦 Installation
 
-### Image Download Settings
-- **Maximum Images**: `MAX_IMAGES` - Controls how many images to download per article
-- **Default**: 20 images per article
-- **Size Filtering**: Only downloads images that are at least 100x100 pixels
-- **Quality Control**: Automatically skips small or low-quality images
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd RAG-Piece
+   ```
 
-### Content Selection
-- **Sections**: Always extracted (text content)
-- **Tables**: Optional (controlled by CSV flag)
-- **Images**: Always extracted (with size and count limits)
-
-## Installation
-
-1. Install Python 3.7 or higher
-2. Install dependencies:
+2. **Install dependencies**
    ```bash
    pip install -r requirements.txt
    ```
 
-## Usage
+3. **Run the system**
+   ```bash
+   python one_piece_scraper.py
+   ```
 
-### Basic Usage
-Run the scraper from the project root:
+## 🎯 Usage
+
+### **Single Command Operation**
 ```bash
 python one_piece_scraper.py
 ```
 
-### Configuration
-Edit the configuration section in `main()` function:
+This command will:
+1. **Scrape** One Piece Wiki articles
+2. **Process** content into intelligent chunks
+3. **Build** BM25 and semantic search indices
+4. **Test** the search functionality
+5. **Save** high-quality images organized by article
+
+### **Search the Database**
 ```python
-# Configuration flags
-SCRAPE_CSV_FILES = False  # Set to True to enable CSV table extraction
-MAX_IMAGES = 20          # Maximum images per article (1-100)
+from db_creator import RAGDatabase, RAGConfig
+
+# Initialize database
+db = RAGDatabase(RAGConfig())
+db.load_indices()
+
+# Natural language search
+results = db.search("What is Arabasta Kingdom?", top_k=5)
+results = db.search("Tell me about the desert in Arabasta", top_k=3)
+results = db.search("Who are the main characters?", top_k=10)
+
+# Print results
+for i, result in enumerate(results, 1):
+    print(f"{i}. {result['search_metadata']['section_name']}")
+    print(f"   Score: {result['combined_score']:.3f}")
+    print(f"   Content: {result['content'][:100]}...")
 ```
 
-### Custom Article List
-Modify the articles list in the `main()` function:
+## 🗂️ Output Structure
+
+```
+RAG-Piece/
+├── one_piece_scraper.py          # Main integrated scraper + RAG system
+├── db_creator.py                 # RAG database components and search logic
+├── requirements.txt              # Python dependencies
+├── SCRAPER_DOCUMENTATION.md      # Detailed technical documentation
+├── data/
+│   ├── images/                   # Downloaded images organized by article
+│   │   └── Arabasta_Kingdom/     # Article-specific image folders
+│   └── rag_db/                   # RAG database files
+│       ├── whoosh_index/         # BM25 keyword search index
+│       ├── faiss_index.bin       # Semantic search index
+│       ├── chunk_mapping.pkl     # Mapping between indices
+│       └── database_metadata.json # Database statistics and info
+```
+
+## ⚙️ Configuration
+
+All parameters are centralized in the `RAGConfig` class for easy tuning:
+
+### **Field Boosting Hierarchy**
+1. **Article Names** (3.0x boost) - Main article titles
+2. **Sub-Article Names** (2.8x boost) - Sub-article/redirect names
+3. **Section Names** (2.5x boost) - Section titles from original structure
+4. **Sub-Section Names** (2.0x boost) - `<h3>` headings within content
+5. **Keywords** (1.8x boost) - BM25-extracted important terms
+6. **Content** (1.0x boost) - Main text content
+
+## 🔍 Search Examples
+
+### **Natural Language Queries**
 ```python
-articles = ["Monkey D. Luffy", "Roronoa Zoro", "Nami", "Your Custom Article"]
+# Character information
+results = db.search("What is Arabasta Kingdom?")
+
+# Specific topics
+results = db.search("Tell me about the desert in Arabasta")
+
+# Character relationships
+results = db.search("Who are the main characters in Arabasta?")
 ```
 
-## Output Structure
-
-For each character, the scraper creates a comprehensive folder structure:
-
-```
-data/
-└── Monkey_D_Luffy/
-    ├── 01_Introduction.txt
-    ├── 02_Appearance.txt
-    ├── 03_Personality.txt
-    ├── 04_Abilities_and_Powers.txt
-    ├── 05_History.txt
-    ├── 06_Major_Battles.txt
-    ├── 07_Relationships.txt
-    ├── 08_Trivia.txt
-    ├── Baratie.csv                    # Only if CSV extraction enabled
-    ├── Devil_Fruit_Powers.csv         # Only if CSV extraction enabled
-    ├── Bounty_History.csv             # Only if CSV extraction enabled
-    ├── Monkey_D_Luffy_Profile.png    # Up to MAX_IMAGES count
-    ├── Gear_Forms.png                 # Minimum 100x100 pixels
-    ├── Battle_Scenes.png              # Size-validated images only
-    └── metadata.json                  # Complete scraping summary
-```
-
-## Articles Included
-
-The scraper processes these One Piece characters with their complete sub-article coverage:
-
-- **Monkey D. Luffy** - Main article + sub-articles (History, Abilities, etc.)
-- **Roronoa Zoro** - Main article + sub-articles (Swords, Training, etc.)
-- **Nami** - Main article + sub-articles (Navigation, Weather, etc.)
-- **Arabasta Kingdom** - Main article + sub-articles (Geography, Culture, etc.)
-
-## Content Quality Improvements
-
-### Text Cleaning
-- ✅ Removes bibliography labels `[1][2][3][42]`
-- ✅ Strips HTML tags and MediaWiki templates
-- ✅ Cleans citation placeholders `[citation needed]`
-- ✅ Normalizes whitespace and formatting
-
-### Section Extraction
-- ✅ **MediaWiki Sections**: Captures `<span class="mw-headline">` sections
-- ✅ **HTML Sections**: Captures traditional `<h2>` sections
-- ✅ **Navigation Filtering**: Skips "Site Navigation", "References", etc.
-- ✅ **Duplicate Prevention**: Tracks seen titles to avoid repetition
-
-### File Naming
-- ✅ **Clean Section Names**: No more HTML artifacts in filenames
-- ✅ **Descriptive Table Names**: Meaningful CSV filenames
-- ✅ **Length Limits**: Prevents extremely long filenames
-- ✅ **Filesystem Safe**: Only alphanumeric characters, spaces, hyphens, underscores
-
-### Image Processing
-- ✅ **Size Validation**: Only downloads images ≥100x100 pixels
-- ✅ **Count Limiting**: Configurable maximum images per article
-- ✅ **Quality Control**: Skips small, low-quality images
-- ✅ **Smart Labeling**: Creates meaningful filenames from alt text or URLs
-
-## Sub-Article Discovery
-
-The scraper automatically finds sub-articles using two methods:
-
-1. **API Search**: Queries MediaWiki API for articles starting with "Character_Name/"
-2. **Common Patterns**: Checks for standard sub-articles like "Gallery", "Images", "Pictures"
-
-This ensures comprehensive coverage without manual article list maintenance.
-
-## Technical Details
-
-### API Endpoints Used
-- `action=parse`: Fetches main article content
-- `action=query&list=search`: Discovers sub-articles
-- Rate limiting: 1-second delays between requests
-
-### Content Merging Strategy
-- **Main Article**: Processed first, establishes baseline content
-- **Sub-Articles**: Processed sequentially, content merged with deduplication
-- **Unique Keys**: Generated for each content piece to prevent duplicates
-- **Metadata Tracking**: Comprehensive logging of all discovered content
-
-### Error Handling
-- **Network Failures**: Graceful degradation with detailed error messages
-- **File System Issues**: Continues processing even if individual files fail
-- **API Limits**: Respects rate limits and handles timeouts
-- **Data Validation**: Ensures content quality before saving
-
-### Image Download Process
-- **URL Validation**: Checks if image is from supported wiki domains
-- **Dimension Checking**: Downloads image first, then validates size
-- **Fallback Handling**: Saves images even if dimension checking fails
-- **Progress Tracking**: Shows download progress and success rates
-
-## Configuration Examples
-
-### Text-Only Scraping
+### **Keyword Searches**
 ```python
-SCRAPE_CSV_FILES = False  # Skip tables
-MAX_IMAGES = 0            # Skip images
+# Simple keywords
+results = db.search("Arabasta")
+results = db.search("Citizens")
+
+# Multiple keywords
+results = db.search("kingdom desert citizens")
 ```
 
-### Full Content Scraping
-```python
-SCRAPE_CSV_FILES = True   # Include tables
-MAX_IMAGES = 50           # More images per article
-```
+## 📚 Documentation
 
-### Minimal Image Scraping
-```python
-SCRAPE_CSV_FILES = False  # Skip tables
-MAX_IMAGES = 5            # Just a few key images
-```
+- **[SCRAPER_DOCUMENTATION.md](SCRAPER_DOCUMENTATION.md)**: Comprehensive technical documentation
+- **Code Comments**: Detailed inline documentation
+- **Configuration Guide**: All parameters explained in `RAGConfig` class
 
-## Notes
+## 🚀 Getting Started
 
-- **Automatic Cleanup**: Previous data folders are automatically cleared before each run
-- **Comprehensive Logging**: Detailed progress information and error reporting
-- **Unicode Support**: Proper handling of Japanese names and special characters
-- **Cross-Platform**: Works on Windows, macOS, and Linux
-- **No Manual Configuration**: Automatically adapts to wiki structure changes
-- **Memory Efficient**: Processes content incrementally without loading everything into memory
+1. **Quick Start**:
+   ```bash
+   git clone <repository-url>
+   cd RAG-Piece
+   pip install -r requirements.txt
+   python one_piece_scraper.py
+   ```
 
-## Recent Updates
+2. **Test Search**:
+   ```python
+   from db_creator import RAGDatabase, RAGConfig
+   db = RAGDatabase(RAGConfig())
+   db.load_indices()
+   results = db.search("What is Arabasta Kingdom?")
+   print(f"Found {len(results)} results")
+   ```
 
-### Latest Version Features
-- **Configurable CSV Extraction**: Control whether to extract and save tables
-- **Maximum Images Parameter**: Set custom limits for images per article
-- **Image Size Filtering**: Only downloads images ≥100x100 pixels
-- **Simplified Code Structure**: Cleaner, more maintainable codebase
-- **Enhanced Configuration**: Easy-to-modify settings for different use cases
-- **Improved Image Processing**: Better quality control and error handling
-- **Sub-Article Scraping**: Complete coverage of character-related content
-- **Enhanced Text Cleaning**: Bibliography labels and HTML artifacts removed
-- **Navigation Filtering**: Automatic skipping of non-content sections
-- **Improved File Naming**: Clean, descriptive filenames without artifacts
-- **Duplicate Prevention**: Intelligent content merging from multiple sources
+## 🎉 What Makes This Special
 
-## Performance Considerations
+- **🔥 Zero Configuration**: Works out of the box with sensible defaults
+- **🧠 Intelligent Search**: Understands context and meaning, not just keywords
+- **⚡ Fast Performance**: Sub-second search on comprehensive content
+- **🎯 High Relevance**: Field boosting ensures the most relevant results first
+- **🔧 Fully Configurable**: Every parameter can be tuned for your needs
+- **📊 Rich Metadata**: Preserves document structure and relationships
+- **🚀 Production Ready**: Robust error handling and fallback strategies
 
-- **Image Downloads**: Each image requires a separate HTTP request
-- **Rate Limiting**: 1-second delays between requests to respect API limits
-- **Memory Usage**: Images are processed one at a time to minimize memory footprint
-- **Network Efficiency**: Only downloads images that meet size requirements
-
-The scraper now provides the most comprehensive and configurable One Piece character data available, automatically discovering and including all related content while maintaining clean, organized output and giving you full control over what gets extracted.
+Transform your One Piece research with the power of modern RAG technology! 🏴‍☠️
