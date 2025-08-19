@@ -46,9 +46,9 @@ RAG-Piece/
 ├── db_creator.py                 # RAG database components and search logic
 ├── requirements.txt              # Python dependencies
 ├── SCRAPER_DOCUMENTATION.md      # This technical documentation
+├── images/                       # Downloaded images organized by article
+│   └── Arabasta_Kingdom/         # Article-specific image folders
 ├── data/
-│   ├── images/                   # Downloaded images organized by article
-│   │   └── Arabasta_Kingdom/     # Article-specific image folders
 │   └── rag_db/                   # RAG database files
 │       ├── whoosh_index/         # BM25 keyword search index
 │       ├── faiss_index.bin       # Semantic search index

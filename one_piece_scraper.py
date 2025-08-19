@@ -267,7 +267,7 @@ def scrape_article(article_name, rag_database, max_img=20):
     print(f"Scraping article: {article_name}")
     
     # Create images folder only (no text files saved)
-    images_folder = Path("data") / "images" / slugify(article_name)
+    images_folder = Path("images") / slugify(article_name)
     images_folder.mkdir(parents=True, exist_ok=True)
     
     # Find and scrape sub-articles first
@@ -384,7 +384,7 @@ def scrape_article(article_name, rag_database, max_img=20):
         'total_chunks': len(all_chunks),
         'total_images_found': len(all_images),
         'total_images_downloaded': len(downloaded_images),
-        'images_folder': f'data/images/{slugify(article_name)}'
+        'images_folder': f'images/{slugify(article_name)}'
     }
     
     print(f"Completed scraping: {article_name} (with {len(sub_articles)} sub-articles, {len(all_chunks)} chunks)")
@@ -416,23 +416,19 @@ def main():
     print(f"  - Embedding model: {rag_config.EMBEDDING_MODEL}")
     print()
     
-    # Clear previous data (keep existing images if desired)
+    # Clear previous data folder (images are now stored separately)
     data_folder = Path("data")
     if data_folder.exists():
         print("Clearing previous data folder...")
         try:
-            # Remove everything except images folder if it exists
-            for item in data_folder.iterdir():
-                if item.name != "images":
-                    if item.is_dir():
-                        shutil.rmtree(item)
-                    else:
-                        item.unlink()
-            print("  Previous data cleared (kept images folder)")
+            shutil.rmtree(data_folder)
+            print("  Previous data folder cleared")
         except Exception as e:
             print(f"  Warning: Could not clear data folder: {e}")
     else:
         print("No previous data folder found, starting fresh")
+    
+    # Images are now stored in separate images/ folder (not cleared automatically)
     print()
     
     # Scrape articles and collect all chunks
@@ -467,7 +463,7 @@ def main():
             print(f"  - {chunk_count} chunks indexed")
             print(f"  - Whoosh index: {rag_db.db_path}/whoosh_index/")
             print(f"  - FAISS index: {rag_db.db_path}/faiss_index.bin")
-            print("  - Images saved to: data/images/")
+            print("  - Images saved to: images/")
             
             # Test search functionality
             print("\n" + "=" * 50)
