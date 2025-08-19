@@ -1,0 +1,7 @@
+2025-08-19 17:01:28,976 - rag_piece - INFO - setup_logging:61 - Logging initialized - Level: INFO, File: logs\rag_piece_20250819_170128.log
+2025-08-19 17:01:28,977 - rag_piece - INFO - main:23 - Starting One Piece Wiki RAG Database Builder
+2025-08-19 17:01:28,979 - rag_piece - INFO - _display_configuration:59 - RAG Configuration:
+2025-08-19 17:01:28,979 - rag_piece - INFO - _display_configuration:60 -   - Chunking: 100-400 tokens (target: 250)
+2025-08-19 17:01:28,980 - rag_piece - INFO - _display_configuration:61 -   - Keywords: 10 per chunk using BM25 scoring
+2025-08-19 17:01:28,980 - rag_piece - INFO - _display_configuration:62 -   - Embedding model: all-MiniLM-L6-v2
+2025-08-19 17:01:28,981 - rag_piece - INFO - _clear_previous_data:69 - Clearing previous data folder...

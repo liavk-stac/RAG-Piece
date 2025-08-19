@@ -42,8 +42,19 @@ Web Scraping → Content Extraction → Hybrid Chunking → RAG Database → Sea
 ### File Structure
 ```
 RAG-Piece/
-├── one_piece_scraper.py          # Main integrated scraper + RAG system
-├── db_creator.py                 # RAG database components and search logic
+├── main.py                       # Main entry point (follows cursor guidelines)
+├── src/                          # Source code directory
+│   └── rag_piece/                # Main package
+│       ├── __init__.py           # Package initialization
+│       ├── main.py               # Application main function
+│       ├── config.py             # Configuration settings (RAGConfig)
+│       ├── database.py           # RAG database coordination
+│       ├── chunking.py           # Text chunking (TextChunker)
+│       ├── keywords.py           # Keyword extraction (KeywordExtractor)
+│       ├── search.py             # BM25 and semantic search (SearchEngine)
+│       ├── scraper.py            # Wiki scraping (OneWikiScraper)
+│       └── utils.py              # Utilities and logging setup
+├── logs/                         # Application logs with timestamps
 ├── requirements.txt              # Python dependencies
 ├── SCRAPER_DOCUMENTATION.md      # This technical documentation
 ├── images/                       # Downloaded images organized by article
@@ -54,6 +65,7 @@ RAG-Piece/
 │       ├── faiss_index.bin       # Semantic search index
 │       ├── chunk_mapping.pkl     # Mapping between indices
 │       └── database_metadata.json # Database statistics and info
+└── [legacy compatibility files]  # For backward compatibility
 ```
 
 ### Dependencies
@@ -71,6 +83,27 @@ nltk>=3.8.1                      # Natural language processing
 ```
 
 ## Major System Changes (Latest Update)
+
+### 🏗️ **Modular Architecture Restructure (Latest)**
+The system has been completely reorganized following cursor coding guidelines:
+
+#### **New Modular Structure**
+- ✅ **Proper Project Structure**: All code moved to `src/` directory
+- ✅ **Separation of Concerns**: Each component in its own module
+- ✅ **Function Size Limit**: All functions under 30 lines
+- ✅ **Comprehensive Logging**: Timestamped logs to `logs/` directory
+- ✅ **Input Validation**: Robust error handling and validation
+- ✅ **Clean Entry Point**: Simple `main.py` at project root
+
+#### **Module Breakdown**
+- **`config.py`**: Centralized configuration with validation
+- **`utils.py`**: Logging setup and utility functions
+- **`chunking.py`**: Text chunking with paragraph-based splitting
+- **`keywords.py`**: BM25-style keyword extraction
+- **`search.py`**: BM25 and semantic search engines
+- **`scraper.py`**: Wiki scraping functionality
+- **`database.py`**: Coordinates all components
+- **`main.py`**: Application entry point
 
 ### 🔄 **Complete Integration Transformation**
 The system has been completely transformed from a file-based scraper to an integrated RAG database system:
@@ -180,12 +213,12 @@ KEYWORDS_BOOST = 1.8            # extracted keywords
 #### **Single Command Operation**
 ```bash
 # Complete pipeline: scrape → chunk → index → test
-python one_piece_scraper.py
+python main.py
 ```
 
 #### **Programmatic Usage**
 ```python
-from db_creator import RAGDatabase, RAGConfig
+from rag_piece import RAGDatabase, RAGConfig
 
 # Load existing database
 db = RAGDatabase(RAGConfig())

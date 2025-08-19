@@ -1,0 +1,71 @@
+2025-08-19 17:42:06,036 - rag_piece - INFO - setup_logging:61 - Logging initialized - Level: INFO, File: logs\rag_piece_20250819_174206.log
+2025-08-19 17:42:06,039 - rag_piece - INFO - main:23 - Starting One Piece Wiki RAG Database Builder
+2025-08-19 17:42:06,046 - rag_piece - INFO - _display_configuration:59 - RAG Configuration:
+2025-08-19 17:42:06,047 - rag_piece - INFO - _display_configuration:60 -   - Chunking: 100-400 tokens (target: 250)
+2025-08-19 17:42:06,047 - rag_piece - INFO - _display_configuration:61 -   - Keywords: 10 per chunk using BM25 scoring
+2025-08-19 17:42:06,048 - rag_piece - INFO - _display_configuration:62 -   - Embedding model: all-MiniLM-L6-v2
+2025-08-19 17:42:06,049 - rag_piece - INFO - _clear_previous_data:69 - Clearing previous data folder...
+2025-08-19 17:42:06,065 - rag_piece - INFO - setup_logging:61 - Logging initialized - Level: INFO, File: logs\rag_piece_20250819_174206.log
+2025-08-19 17:42:06,066 - rag_piece - INFO - __init__:37 - Initializing RAG Database at data\rag_db
+2025-08-19 17:42:06,107 - rag_piece.search - INFO - _load_embedding_model:252 - Loading embedding model: all-MiniLM-L6-v2
+2025-08-19 17:42:08,751 - rag_piece - INFO - _process_articles:91 - Processing 1 articles
+2025-08-19 17:42:08,752 - rag_piece.scraper - INFO - scrape_article:45 - Scraping article: Arabasta Kingdom
+2025-08-19 17:42:08,755 - rag_piece.scraper - INFO - _find_sub_articles:80 - Finding sub-articles for: Arabasta Kingdom
+2025-08-19 17:42:10,750 - rag_piece.scraper - INFO - _find_sub_articles:113 - Found 0 sub-articles
+2025-08-19 17:42:57,958 - rag_piece.scraper - INFO - _download_single_image:373 - Downloaded: Arabasta_Kingdom_Infobox.png (500x396)
+2025-08-19 17:43:01,857 - rag_piece.scraper - INFO - _download_single_image:373 - Downloaded: Alubarna_Infobox.png (1674x884)
+2025-08-19 17:43:04,575 - rag_piece.scraper - INFO - _download_single_image:373 - Downloaded: Nanohana.png (704x579)
+2025-08-19 17:43:08,239 - rag_piece.scraper - INFO - _download_single_image:373 - Downloaded: Yuba_Infobox.png (1912x1078)
+2025-08-19 17:43:11,151 - rag_piece.scraper - INFO - _download_single_image:373 - Downloaded: Rainbase_Infobox.png (704x528)
+2025-08-19 17:43:14,549 - rag_piece.scraper - INFO - _download_single_image:373 - Downloaded: Tomb_of_the_Kings_Infobox.png (1912x1078)
+2025-08-19 17:43:16,285 - rag_piece.scraper - INFO - _download_single_image:373 - Downloaded: Arabasta_Flag.png (342x298)
+2025-08-19 17:43:18,645 - rag_piece.scraper - INFO - _download_single_image:373 - Downloaded: Nefertari_Vivi_Portrait.png (511x511)
+2025-08-19 17:43:20,771 - rag_piece.scraper - INFO - _download_single_image:373 - Downloaded: Nefertari_Cobra_Portrait.png (466x466)
+2025-08-19 17:43:22,527 - rag_piece.scraper - INFO - _download_single_image:373 - Downloaded: Nefertari_Titi_Portrait.png (340x340)
+2025-08-19 17:43:24,592 - rag_piece.scraper - INFO - _download_single_image:373 - Downloaded: Nefertari_D_Lili_Portrait.png (384x384)
+2025-08-19 17:43:25,742 - rag_piece.scraper - INFO - _download_single_image:373 - Downloaded: NoPicAvailable.png (600x600)
+2025-08-19 17:43:27,378 - rag_piece.scraper - INFO - _download_single_image:373 - Downloaded: Igaram_Portrait.png (230x230)
+2025-08-19 17:43:29,417 - rag_piece.scraper - INFO - _download_single_image:373 - Downloaded: Chaka_Portrait.png (400x400)
+2025-08-19 17:43:32,318 - rag_piece.scraper - INFO - _download_single_image:373 - Downloaded: Pell_Portrait.png (549x549)
+2025-08-19 17:43:34,187 - rag_piece.scraper - INFO - _download_single_image:373 - Downloaded: Terracotta_Portrait.png (278x278)
+2025-08-19 17:43:36,195 - rag_piece.scraper - INFO - _download_single_image:373 - Downloaded: Ho_Portrait.png (425x425)
+2025-08-19 17:43:38,195 - rag_piece.scraper - INFO - _download_single_image:373 - Downloaded: Maidy_Portrait.png (340x340)
+2025-08-19 17:43:39,834 - rag_piece.scraper - INFO - _download_single_image:373 - Downloaded: Hyota_Portrait.png (258x258)
+2025-08-19 17:43:39,835 - rag_piece.scraper - INFO - scrape_article:64 - Completed scraping: Arabasta Kingdom (40 sections, 19 images)
+2025-08-19 17:43:39,836 - rag_piece - INFO - process_sections_directly:58 - Processing 40 sections for article: Arabasta Kingdom
+2025-08-19 17:43:39,852 - rag_piece - INFO - process_sections_directly:74 - Created 20 chunks from 40 sections
+2025-08-19 17:43:39,853 - rag_piece - INFO - _process_articles:105 - Successfully processed: Arabasta Kingdom (20 chunks)
+2025-08-19 17:43:39,853 - rag_piece - INFO - _process_articles:114 - Building RAG database from 20 total chunks...
+2025-08-19 17:43:39,853 - rag_piece - INFO - build_indices_from_chunks:96 - Building indices for 20 chunks
+2025-08-19 17:43:39,854 - rag_piece.keywords - INFO - extract_keywords:40 - Extracting keywords for 20 chunks
+2025-08-19 17:43:39,854 - rag_piece.keywords - INFO - _build_corpus_statistics:66 - Building corpus statistics for keyword extraction
+2025-08-19 17:43:40,483 - rag_piece.keywords - INFO - extract_keywords:57 - Keyword extraction completed
+2025-08-19 17:43:40,483 - rag_piece.search - INFO - build_whoosh_index:299 - Building Whoosh index...
+2025-08-19 17:43:40,484 - rag_piece.search - ERROR - build_whoosh_index:315 - Error building Whoosh index: name 'Path' is not defined
+Traceback (most recent call last):
+  File "C:\Users\liav korem\Desktop\AI Course\RAG-Piece\src\rag_piece\search.py", line 302, in build_whoosh_index
+    whoosh_dir = Path(self.db_path) / "whoosh_index"
+NameError: name 'Path' is not defined
+2025-08-19 17:43:40,485 - rag_piece - ERROR - build_indices_from_chunks:112 - Error building indices: name 'Path' is not defined
+Traceback (most recent call last):
+  File "C:\Users\liav korem\Desktop\AI Course\RAG-Piece\src\rag_piece\database.py", line 102, in build_indices_from_chunks
+    self.search_engine.build_whoosh_index(chunks)
+  File "C:\Users\liav korem\Desktop\AI Course\RAG-Piece\src\rag_piece\search.py", line 302, in build_whoosh_index
+    whoosh_dir = Path(self.db_path) / "whoosh_index"
+NameError: name 'Path' is not defined
+2025-08-19 17:43:40,486 - rag_piece - ERROR - _process_articles:124 - Failed to build database indices
+2025-08-19 17:43:40,491 - rag_piece.search - ERROR - safe_file_operation:106 - Failed to load Whoosh index from data\rag_db/whoosh_index: Index 'MAIN' does not exist in FileStorage('data\\rag_db/whoosh_index')
+Traceback (most recent call last):
+  File "C:\Users\liav korem\Desktop\AI Course\RAG-Piece\src\rag_piece\utils.py", line 104, in safe_file_operation
+    return operation_func()
+  File "C:\Users\liav korem\Desktop\AI Course\RAG-Piece\src\rag_piece\search.py", line 264, in <lambda>
+    lambda: open_dir(whoosh_path),
+  File "C:\Users\liav korem\AppData\Local\Programs\Python\Python39\lib\site-packages\whoosh\index.py", line 123, in open_dir
+    return FileIndex(storage, schema=schema, indexname=indexname)
+  File "C:\Users\liav korem\AppData\Local\Programs\Python\Python39\lib\site-packages\whoosh\index.py", line 421, in __init__
+    TOC.read(self.storage, self.indexname, schema=self._schema)
+  File "C:\Users\liav korem\AppData\Local\Programs\Python\Python39\lib\site-packages\whoosh\index.py", line 618, in read
+    raise EmptyIndexError("Index %r does not exist in %r"
+whoosh.index.EmptyIndexError: Index 'MAIN' does not exist in FileStorage('data\\rag_db/whoosh_index')
+2025-08-19 17:43:40,500 - rag_piece - ERROR - _test_search_functionality:139 - Could not load indices for testing
+2025-08-19 17:43:40,500 - rag_piece - INFO - main:43 - Process completed successfully! Processed 1 articles.

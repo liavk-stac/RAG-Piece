@@ -44,14 +44,14 @@ A comprehensive **Retrieval-Augmented Generation (RAG)** system that scrapes One
 
 3. **Run the system**
    ```bash
-   python one_piece_scraper.py
+   python main.py
    ```
 
 ## 🎯 Usage
 
 ### **Single Command Operation**
 ```bash
-python one_piece_scraper.py
+python main.py
 ```
 
 This command will:
@@ -60,13 +60,15 @@ This command will:
 3. **Build** BM25 and semantic search indices
 4. **Test** the search functionality
 5. **Save** high-quality images organized by article
+6. **Log** all operations to `logs/` directory
 
 ### **Search the Database**
 ```python
-from db_creator import RAGDatabase, RAGConfig
+from rag_piece import RAGDatabase, RAGConfig
 
 # Initialize database
-db = RAGDatabase(RAGConfig())
+config = RAGConfig()
+db = RAGDatabase(config)
 db.load_indices()
 
 # Natural language search
@@ -81,12 +83,37 @@ for i, result in enumerate(results, 1):
     print(f"   Content: {result['content'][:100]}...")
 ```
 
+### **Using Individual Components**
+```python
+from rag_piece import OneWikiScraper, TextChunker, RAGConfig
+
+# Use just the scraper
+scraper = OneWikiScraper(max_images=10)
+sections, metadata = scraper.scrape_article("Arabasta Kingdom")
+
+# Use just the chunker
+config = RAGConfig()
+chunker = TextChunker(config)
+chunks = chunker.chunk_section_content(content, "Section Name", "Article Name")
+```
+
 ## 🗂️ Output Structure
 
 ```
 RAG-Piece/
-├── one_piece_scraper.py          # Main integrated scraper + RAG system
-├── db_creator.py                 # RAG database components and search logic
+├── main.py                       # Main entry point
+├── src/                          # Source code (follows cursor guidelines)
+│   └── rag_piece/                # Main package
+│       ├── __init__.py           # Package initialization
+│       ├── main.py               # Application main function
+│       ├── config.py             # Configuration settings
+│       ├── database.py           # RAG database coordination
+│       ├── chunking.py           # Text chunking functionality
+│       ├── keywords.py           # Keyword extraction
+│       ├── search.py             # BM25 and semantic search
+│       ├── scraper.py            # Wiki scraping functionality
+│       └── utils.py              # Utilities and logging
+├── logs/                         # Application logs
 ├── requirements.txt              # Python dependencies
 ├── SCRAPER_DOCUMENTATION.md      # Detailed technical documentation
 ├── images/                       # Downloaded images organized by article
@@ -97,6 +124,7 @@ RAG-Piece/
 │       ├── faiss_index.bin       # Semantic search index
 │       ├── chunk_mapping.pkl     # Mapping between indices
 │       └── database_metadata.json # Database statistics and info
+└── [legacy files for compatibility]
 ```
 
 ## ⚙️ Configuration
@@ -148,16 +176,24 @@ results = db.search("kingdom desert citizens")
    git clone <repository-url>
    cd RAG-Piece
    pip install -r requirements.txt
-   python one_piece_scraper.py
+   python main.py
    ```
 
 2. **Test Search**:
    ```python
-   from db_creator import RAGDatabase, RAGConfig
-   db = RAGDatabase(RAGConfig())
+   from rag_piece import RAGDatabase, RAGConfig
+   config = RAGConfig()
+   db = RAGDatabase(config)
    db.load_indices()
    results = db.search("What is Arabasta Kingdom?")
    print(f"Found {len(results)} results")
+   ```
+
+3. **Check Logs**:
+   ```bash
+   # View detailed logs
+   ls logs/
+   cat logs/rag_piece_*.log
    ```
 
 ## 🎉 What Makes This Special
