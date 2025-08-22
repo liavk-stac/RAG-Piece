@@ -10,6 +10,7 @@ from pathlib import Path
 from .config import RAGConfig
 from .database import RAGDatabase
 from .scraper import OneWikiScraper
+from .csv_scraper import CSVWikiScraper
 from .utils import setup_logging
 
 
@@ -30,11 +31,12 @@ def main():
         _clear_previous_data(logger)
         
         # Initialize components
-        scraper = OneWikiScraper(max_images=20)
+        text_scraper = OneWikiScraper(max_images=20)
+        csv_scraper = CSVWikiScraper(request_delay=1.0)
         rag_db = RAGDatabase(config)
         
         # Scrape articles and build database
-        success_count = _process_articles(scraper, rag_db, logger)
+        success_count = _process_articles(text_scraper, csv_scraper, rag_db, logger)
         
         # Test search functionality
         if success_count > 0:
@@ -54,6 +56,7 @@ def _display_configuration(config: RAGConfig, logger: logging.Logger) -> None:
     print("Configuration:")
     print("  - Maximum images per article: 20")
     print("  - Direct processing: text → chunks → database (no intermediate files)")
+    print("  - CSV extraction: Tables → CSV files")
     print()
     
     logger.info("RAG Configuration:")
@@ -76,10 +79,11 @@ def _clear_previous_data(logger: logging.Logger) -> None:
         print("No previous data folder found, starting fresh")
     
     print("  Images are stored in separate images/ folder (not cleared automatically)")
+    print("  CSV files are stored in separate csv_files/ folder (not cleared automatically)")
     print()
 
 
-def _process_articles(scraper: OneWikiScraper, rag_db: RAGDatabase, logger: logging.Logger) -> int:
+def _process_articles(text_scraper: OneWikiScraper, csv_scraper: CSVWikiScraper, rag_db: RAGDatabase, logger: logging.Logger) -> int:
     """Process all articles and build the database."""
     # Define articles to scrape
     articles = ["Arabasta Kingdom"]
@@ -92,17 +96,33 @@ def _process_articles(scraper: OneWikiScraper, rag_db: RAGDatabase, logger: logg
     
     for article_name in articles:
         try:
-            # Scrape article
-            sections, metadata = scraper.scrape_article(article_name)
+            logger.info(f"Processing article: {article_name}")
+            
+            # Run both scrapers in parallel
+            logger.info("Running text and image scraper...")
+            sections, text_metadata = text_scraper.scrape_article(article_name)
+            
+            logger.info("Running CSV scraper...")
+            csv_files, csv_metadata = csv_scraper.scrape_article_to_csv(article_name)
             
             if sections:
                 # Process sections into chunks
                 chunks = rag_db.process_sections_directly(sections, article_name)
                 all_chunks.extend(chunks)
-                all_metadata.append(metadata)
+                
+                # Combine metadata from both scrapers
+                combined_metadata = {
+                    **text_metadata,
+                    'csv_files_created': csv_files,
+                    'csv_metadata': csv_metadata
+                }
+                all_metadata.append(combined_metadata)
                 success_count += 1
                 
-                logger.info(f"Successfully processed: {article_name} ({len(chunks)} chunks)")
+                logger.info(f"Successfully processed: {article_name}")
+                logger.info(f"  - Text sections: {len(sections)}")
+                logger.info(f"  - CSV files: {len(csv_files)}")
+                logger.info(f"  - Chunks: {len(chunks)}")
             else:
                 logger.warning(f"No content found for article: {article_name}")
         
@@ -120,6 +140,7 @@ def _process_articles(scraper: OneWikiScraper, rag_db: RAGDatabase, logger: logg
             print(f"  - Whoosh index: {rag_db.db_path}/whoosh_index/")
             print(f"  - FAISS index: {rag_db.db_path}/faiss_index.bin")
             print("  - Images saved to: images/")
+            print("  - CSV files saved to: csv_files/")
         else:
             logger.error("Failed to build database indices")
     else:

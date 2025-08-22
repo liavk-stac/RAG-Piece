@@ -1,0 +1,9 @@
+2025-08-22 00:16:16,036 - rag_piece - INFO - setup_logging:61 - Logging initialized - Level: INFO, File: logs\rag_piece_20250822_001616.log
+2025-08-22 00:16:16,036 - rag_piece - INFO - main:25 - Starting CSV scraper test
+2025-08-22 00:16:16,037 - rag_piece.csv_scraper - INFO - scrape_article_to_csv:46 - Scraping article for CSV: Arabasta Kingdom
+2025-08-22 00:16:16,039 - rag_piece.csv_scraper - INFO - _find_sub_articles:81 - Finding sub-articles for: Arabasta Kingdom
+2025-08-22 00:16:17,666 - rag_piece.csv_scraper - INFO - _find_sub_articles:114 - Found 0 sub-articles
+2025-08-22 00:16:18,543 - rag_piece.csv_scraper - INFO - _extract_tables:196 - Found 28 total tables in Arabasta Kingdom
+2025-08-22 00:16:18,564 - rag_piece.csv_scraper - INFO - _extract_tables:215 - Extracted table 1: Citizens[] (22 rows, 1 columns)
+2025-08-22 00:16:18,575 - rag_piece.csv_scraper - INFO - _convert_tables_to_csv:441 - Created CSV: Arabasta_Kingdom_Citizens.csv
+2025-08-22 00:16:18,577 - rag_piece.csv_scraper - INFO - scrape_article_to_csv:65 - Completed CSV scraping: Arabasta Kingdom (1 CSV files created)

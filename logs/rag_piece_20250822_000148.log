@@ -1,0 +1,12 @@
+2025-08-22 00:01:48,911 - rag_piece - INFO - setup_logging:61 - Logging initialized - Level: INFO, File: logs\rag_piece_20250822_000148.log
+2025-08-22 00:01:48,912 - rag_piece - INFO - main:25 - Starting CSV scraper test
+2025-08-22 00:01:48,913 - rag_piece.csv_scraper - INFO - scrape_article_to_csv:46 - Scraping article for CSV: Arabasta Kingdom
+2025-08-22 00:01:48,917 - rag_piece.csv_scraper - INFO - _find_sub_articles:81 - Finding sub-articles for: Arabasta Kingdom
+2025-08-22 00:01:50,558 - rag_piece.csv_scraper - INFO - _find_sub_articles:114 - Found 0 sub-articles
+2025-08-22 00:01:51,746 - rag_piece.csv_scraper - INFO - _convert_tables_to_csv:389 - Created CSV: Arabasta_Kingdom_Site_Navigation.csv
+2025-08-22 00:01:51,750 - rag_piece.csv_scraper - INFO - _convert_tables_to_csv:389 - Created CSV: Arabasta_Kingdom_Site_Navigation.csv
+2025-08-22 00:01:51,752 - rag_piece.csv_scraper - INFO - _convert_tables_to_csv:389 - Created CSV: Arabasta_Kingdom_Site_Navigation.csv
+2025-08-22 00:01:51,757 - rag_piece.csv_scraper - INFO - _convert_tables_to_csv:389 - Created CSV: Arabasta_Kingdom_Site_Navigation.csv
+2025-08-22 00:01:51,759 - rag_piece.csv_scraper - INFO - _convert_tables_to_csv:389 - Created CSV: Arabasta_Kingdom_Site_Navigation.csv
+2025-08-22 00:01:51,761 - rag_piece.csv_scraper - INFO - _convert_tables_to_csv:389 - Created CSV: Arabasta_Kingdom_Site_Navigation.csv
+2025-08-22 00:01:51,762 - rag_piece.csv_scraper - INFO - scrape_article_to_csv:65 - Completed CSV scraping: Arabasta Kingdom (6 CSV files created)

@@ -1,0 +1,70 @@
+2025-08-22 00:05:34,857 - rag_piece - INFO - setup_logging:61 - Logging initialized - Level: DEBUG, File: logs\rag_piece_20250822_000534.log
+2025-08-22 00:05:34,857 - rag_piece - INFO - main:25 - Starting CSV scraper test
+2025-08-22 00:05:34,858 - rag_piece.csv_scraper - INFO - scrape_article_to_csv:46 - Scraping article for CSV: Arabasta Kingdom
+2025-08-22 00:05:34,860 - rag_piece.csv_scraper - INFO - _find_sub_articles:81 - Finding sub-articles for: Arabasta Kingdom
+2025-08-22 00:05:36,793 - rag_piece.csv_scraper - INFO - _find_sub_articles:114 - Found 0 sub-articles
+2025-08-22 00:05:37,915 - rag_piece.csv_scraper - INFO - _extract_tables:196 - Found 28 total tables in Arabasta Kingdom
+2025-08-22 00:05:37,917 - rag_piece.csv_scraper - DEBUG - _extract_tables:200 - Processing table 1: classes=['portrait-gallery', 'cs', 'ArabastaColors'], id=none
+2025-08-22 00:05:37,918 - rag_piece.csv_scraper - DEBUG - _extract_tables:208 - Skipped table 1: not valid
+2025-08-22 00:05:37,919 - rag_piece.csv_scraper - DEBUG - _extract_tables:200 - Processing table 2: classes=[], id=none
+2025-08-22 00:05:37,919 - rag_piece.csv_scraper - DEBUG - _extract_tables:208 - Skipped table 2: not valid
+2025-08-22 00:05:37,919 - rag_piece.csv_scraper - DEBUG - _extract_tables:200 - Processing table 3: classes=[], id=none
+2025-08-22 00:05:37,921 - rag_piece.csv_scraper - DEBUG - _extract_tables:208 - Skipped table 3: not valid
+2025-08-22 00:05:37,921 - rag_piece.csv_scraper - DEBUG - _extract_tables:200 - Processing table 4: classes=[], id=none
+2025-08-22 00:05:37,921 - rag_piece.csv_scraper - DEBUG - _extract_tables:208 - Skipped table 4: not valid
+2025-08-22 00:05:37,922 - rag_piece.csv_scraper - DEBUG - _extract_tables:200 - Processing table 5: classes=['navibox', 'toccolours', 'mw-collapsible', 'mw-collapsed'], id=none
+2025-08-22 00:05:37,923 - rag_piece.csv_scraper - DEBUG - _extract_tables:208 - Skipped table 5: not valid
+2025-08-22 00:05:37,924 - rag_piece.csv_scraper - DEBUG - _extract_tables:200 - Processing table 6: classes=['collapsible'], id=none
+2025-08-22 00:05:37,925 - rag_piece.csv_scraper - DEBUG - _is_valid_table:271 - Table skipped due to class: ['collapsible']
+2025-08-22 00:05:37,925 - rag_piece.csv_scraper - DEBUG - _extract_tables:208 - Skipped table 6: not valid
+2025-08-22 00:05:37,926 - rag_piece.csv_scraper - DEBUG - _extract_tables:200 - Processing table 7: classes=['collapsible'], id=none
+2025-08-22 00:05:37,926 - rag_piece.csv_scraper - DEBUG - _extract_tables:208 - Skipped table 7: not valid
+2025-08-22 00:05:37,927 - rag_piece.csv_scraper - DEBUG - _extract_tables:200 - Processing table 8: classes=['collapsible'], id=none
+2025-08-22 00:05:37,930 - rag_piece.csv_scraper - DEBUG - _extract_tables:208 - Skipped table 8: not valid
+2025-08-22 00:05:37,930 - rag_piece.csv_scraper - DEBUG - _extract_tables:200 - Processing table 9: classes=['navibox', 'toccolours', 'mw-collapsible', 'mw-collapsed'], id=none
+2025-08-22 00:05:37,933 - rag_piece.csv_scraper - DEBUG - _extract_tables:208 - Skipped table 9: not valid
+2025-08-22 00:05:37,935 - rag_piece.csv_scraper - DEBUG - _extract_tables:200 - Processing table 10: classes=['collapsible'], id=none
+2025-08-22 00:05:37,937 - rag_piece.csv_scraper - DEBUG - _is_valid_table:271 - Table skipped due to class: ['collapsible']
+2025-08-22 00:05:37,938 - rag_piece.csv_scraper - DEBUG - _extract_tables:208 - Skipped table 10: not valid
+2025-08-22 00:05:37,939 - rag_piece.csv_scraper - DEBUG - _extract_tables:200 - Processing table 11: classes=['navibox', 'toccolours', 'mw-collapsible', 'mw-collapsed'], id=none
+2025-08-22 00:05:37,940 - rag_piece.csv_scraper - DEBUG - _extract_tables:208 - Skipped table 11: not valid
+2025-08-22 00:05:37,941 - rag_piece.csv_scraper - DEBUG - _extract_tables:200 - Processing table 12: classes=['collapsible'], id=none
+2025-08-22 00:05:37,942 - rag_piece.csv_scraper - DEBUG - _is_valid_table:271 - Table skipped due to class: ['collapsible']
+2025-08-22 00:05:37,943 - rag_piece.csv_scraper - DEBUG - _extract_tables:208 - Skipped table 12: not valid
+2025-08-22 00:05:37,946 - rag_piece.csv_scraper - DEBUG - _extract_tables:200 - Processing table 13: classes=['navibox', 'toccolours', 'mw-collapsible', 'mw-collapsed'], id=none
+2025-08-22 00:05:37,950 - rag_piece.csv_scraper - DEBUG - _extract_tables:208 - Skipped table 13: not valid
+2025-08-22 00:05:37,953 - rag_piece.csv_scraper - DEBUG - _extract_tables:200 - Processing table 14: classes=['collapsible'], id=none
+2025-08-22 00:05:37,955 - rag_piece.csv_scraper - DEBUG - _is_valid_table:271 - Table skipped due to class: ['collapsible']
+2025-08-22 00:05:37,956 - rag_piece.csv_scraper - DEBUG - _extract_tables:208 - Skipped table 14: not valid
+2025-08-22 00:05:37,957 - rag_piece.csv_scraper - DEBUG - _extract_tables:200 - Processing table 15: classes=['collapsible'], id=none
+2025-08-22 00:05:37,957 - rag_piece.csv_scraper - DEBUG - _extract_tables:208 - Skipped table 15: not valid
+2025-08-22 00:05:37,958 - rag_piece.csv_scraper - DEBUG - _extract_tables:200 - Processing table 16: classes=['collapsible'], id=none
+2025-08-22 00:05:37,959 - rag_piece.csv_scraper - DEBUG - _extract_tables:208 - Skipped table 16: not valid
+2025-08-22 00:05:37,960 - rag_piece.csv_scraper - DEBUG - _extract_tables:200 - Processing table 17: classes=['collapsible'], id=none
+2025-08-22 00:05:37,963 - rag_piece.csv_scraper - DEBUG - _extract_tables:208 - Skipped table 17: not valid
+2025-08-22 00:05:37,963 - rag_piece.csv_scraper - DEBUG - _extract_tables:200 - Processing table 18: classes=['navibox', 'toccolours', 'mw-collapsible', 'mw-collapsed'], id=none
+2025-08-22 00:05:37,968 - rag_piece.csv_scraper - DEBUG - _extract_tables:208 - Skipped table 18: not valid
+2025-08-22 00:05:37,969 - rag_piece.csv_scraper - DEBUG - _extract_tables:200 - Processing table 19: classes=['collapsible'], id=none
+2025-08-22 00:05:37,971 - rag_piece.csv_scraper - DEBUG - _is_valid_table:271 - Table skipped due to class: ['collapsible']
+2025-08-22 00:05:37,972 - rag_piece.csv_scraper - DEBUG - _extract_tables:208 - Skipped table 19: not valid
+2025-08-22 00:05:37,973 - rag_piece.csv_scraper - DEBUG - _extract_tables:200 - Processing table 20: classes=['collapsible'], id=none
+2025-08-22 00:05:37,973 - rag_piece.csv_scraper - DEBUG - _extract_tables:208 - Skipped table 20: not valid
+2025-08-22 00:05:37,974 - rag_piece.csv_scraper - DEBUG - _extract_tables:200 - Processing table 21: classes=['collapsible'], id=none
+2025-08-22 00:05:37,975 - rag_piece.csv_scraper - DEBUG - _extract_tables:208 - Skipped table 21: not valid
+2025-08-22 00:05:37,975 - rag_piece.csv_scraper - DEBUG - _extract_tables:200 - Processing table 22: classes=['navibox', 'toccolours', 'mw-collapsible', 'mw-collapsed'], id=none
+2025-08-22 00:05:37,981 - rag_piece.csv_scraper - DEBUG - _extract_tables:208 - Skipped table 22: not valid
+2025-08-22 00:05:37,982 - rag_piece.csv_scraper - DEBUG - _extract_tables:200 - Processing table 23: classes=['collapsible'], id=none
+2025-08-22 00:05:37,986 - rag_piece.csv_scraper - DEBUG - _is_valid_table:271 - Table skipped due to class: ['collapsible']
+2025-08-22 00:05:37,987 - rag_piece.csv_scraper - DEBUG - _extract_tables:208 - Skipped table 23: not valid
+2025-08-22 00:05:37,988 - rag_piece.csv_scraper - DEBUG - _extract_tables:200 - Processing table 24: classes=['collapsible'], id=none
+2025-08-22 00:05:37,989 - rag_piece.csv_scraper - DEBUG - _extract_tables:208 - Skipped table 24: not valid
+2025-08-22 00:05:37,989 - rag_piece.csv_scraper - DEBUG - _extract_tables:200 - Processing table 25: classes=['collapsible'], id=none
+2025-08-22 00:05:37,990 - rag_piece.csv_scraper - DEBUG - _extract_tables:208 - Skipped table 25: not valid
+2025-08-22 00:05:37,990 - rag_piece.csv_scraper - DEBUG - _extract_tables:200 - Processing table 26: classes=['navibox', 'toccolours', 'mw-collapsible', 'mw-collapsed'], id=none
+2025-08-22 00:05:37,991 - rag_piece.csv_scraper - DEBUG - _extract_tables:208 - Skipped table 26: not valid
+2025-08-22 00:05:37,992 - rag_piece.csv_scraper - DEBUG - _extract_tables:200 - Processing table 27: classes=['collapsible'], id=none
+2025-08-22 00:05:37,993 - rag_piece.csv_scraper - DEBUG - _is_valid_table:271 - Table skipped due to class: ['collapsible']
+2025-08-22 00:05:37,996 - rag_piece.csv_scraper - DEBUG - _extract_tables:208 - Skipped table 27: not valid
+2025-08-22 00:05:37,997 - rag_piece.csv_scraper - DEBUG - _extract_tables:200 - Processing table 28: classes=['collapsible'], id=none
+2025-08-22 00:05:37,999 - rag_piece.csv_scraper - DEBUG - _extract_tables:208 - Skipped table 28: not valid
+2025-08-22 00:05:38,001 - rag_piece.csv_scraper - INFO - scrape_article_to_csv:65 - Completed CSV scraping: Arabasta Kingdom (0 CSV files created)
