@@ -1,0 +1,21 @@
+2025-08-23 10:04:43,858 - rag_piece - INFO - setup_logging:61 - Logging initialized - Level: INFO, File: logs\rag_piece_20250823_100443.log
+2025-08-23 10:04:43,859 - rag_piece - INFO - main:324 - Starting article summarizer test
+2025-08-23 10:04:45,695 - rag_piece.summarizer - INFO - summarize_article:128 - Starting summarization for article: Arabasta Kingdom
+2025-08-23 10:04:45,703 - rag_piece.scraper - INFO - scrape_article:45 - Scraping article: Arabasta Kingdom
+2025-08-23 10:04:45,741 - rag_piece.scraper - INFO - _find_sub_articles:80 - Finding sub-articles for: Arabasta Kingdom
+2025-08-23 10:04:48,432 - rag_piece.scraper - INFO - _find_sub_articles:113 - Found 0 sub-articles
+2025-08-23 10:05:54,148 - rag_piece.scraper - INFO - scrape_article:64 - Completed scraping: Arabasta Kingdom (40 sections, 0 images)
+2025-08-23 10:05:54,238 - rag_piece.summarizer - ERROR - _create_summary:228 - Error creating summary for Arabasta Kingdom - Main Article: 
+
+You tried to access openai.ChatCompletion, but this is no longer supported in openai>=1.0.0 - see the README at https://github.com/openai/openai-python for the API.
+
+You can run `openai migrate` to automatically upgrade your codebase to use the 1.0.0 interface. 
+
+Alternatively, you can pin your installation to the old version, e.g. `pip install openai==0.28`
+
+A detailed migration guide is available here: https://github.com/openai/openai-python/discussions/742
+
+2025-08-23 10:05:54,245 - rag_piece.summarizer - INFO - _save_summary:311 - Saved main summary to: summaries\Arabasta_Kingdom\Arabasta_Kingdom_main_summary.txt
+2025-08-23 10:05:54,249 - rag_piece.scraper - INFO - _find_sub_articles:80 - Finding sub-articles for: Arabasta Kingdom
+2025-08-23 10:05:56,295 - rag_piece.scraper - INFO - _find_sub_articles:113 - Found 0 sub-articles
+2025-08-23 10:05:56,301 - rag_piece.summarizer - INFO - summarize_article:182 - Completed summarization for Arabasta Kingdom: 1 summaries created

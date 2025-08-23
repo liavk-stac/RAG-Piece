@@ -13,6 +13,13 @@ from .scraper import OneWikiScraper
 from .csv_scraper import CSVWikiScraper
 from .utils import setup_logging
 
+# Import summarizer for optional integration
+try:
+    from .summarizer import ArticleSummarizer
+    SUMMARIZER_AVAILABLE = True
+except ImportError:
+    SUMMARIZER_AVAILABLE = False
+
 
 def main():
     """Main function to run the integrated scraper + RAG system."""
@@ -57,12 +64,30 @@ def _display_configuration(config: RAGConfig, logger: logging.Logger) -> None:
     print("  - Maximum images per article: 20")
     print("  - Direct processing: text → chunks → database (no intermediate files)")
     print("  - CSV extraction: Tables → CSV files")
+    
+    # Show summarization status
+    if config.ENABLE_SUMMARIZATION:
+        if SUMMARIZER_AVAILABLE:
+            print("  - Article summarization: ENABLED (using OpenAI)")
+        else:
+            print("  - Article summarization: ENABLED but summarizer not available")
+            print("    (article_summarizer.py not found in root directory)")
+    else:
+        print("  - Article summarization: DISABLED (expensive operation)")
+    
     print()
     
     logger.info("RAG Configuration:")
     logger.info(f"  - Chunking: {config.MIN_CHUNK_SIZE}-{config.MAX_CHUNK_SIZE} tokens (target: {config.TARGET_CHUNK_SIZE})")
     logger.info(f"  - Keywords: {config.KEYWORDS_PER_CHUNK} per chunk using BM25 scoring")
     logger.info(f"  - Embedding model: {config.EMBEDDING_MODEL}")
+    
+    if config.ENABLE_SUMMARIZATION and SUMMARIZER_AVAILABLE:
+        logger.info(f"  - Summarization: {config.SUMMARY_MODEL} (temperature: {config.SUMMARY_TEMPERATURE})")
+        if config.SAVE_SUMMARIES_TO_FILES:
+            logger.info("  - Summary files: Will be saved to summaries/ folder")
+        else:
+            logger.info("  - Summary files: Will NOT be saved to summaries/ folder")
 
 
 def _clear_previous_data(logger: logging.Logger) -> None:
@@ -92,6 +117,22 @@ def _process_articles(text_scraper: OneWikiScraper, csv_scraper: CSVWikiScraper,
     all_metadata = []
     success_count = 0
     
+    # Initialize summarizer if enabled
+    summarizer = None
+    if rag_db.config.ENABLE_SUMMARIZATION and SUMMARIZER_AVAILABLE:
+        try:
+            summarizer = ArticleSummarizer(
+                max_chunk_size=rag_db.config.MAX_CHUNK_SIZE,
+                save_to_files=rag_db.config.SAVE_SUMMARIES_TO_FILES
+            )
+            logger.info("Article summarizer initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to initialize summarizer: {e}")
+            logger.warning("Continuing without summarization")
+            summarizer = None
+    elif rag_db.config.ENABLE_SUMMARIZATION and not SUMMARIZER_AVAILABLE:
+        logger.warning("Summarization enabled but summarizer not available")
+    
     logger.info(f"Processing {len(articles)} articles")
     
     for article_name in articles:
@@ -110,11 +151,23 @@ def _process_articles(text_scraper: OneWikiScraper, csv_scraper: CSVWikiScraper,
                 chunks = rag_db.process_sections_directly(sections, article_name)
                 all_chunks.extend(chunks)
                 
+                # Create summary chunks if summarizer is available
+                summary_chunks = []
+                if summarizer:
+                    try:
+                        logger.info("Creating summary chunks...")
+                        summary_chunks = summarizer.create_summary_chunks(article_name)
+                        all_chunks.extend(summary_chunks)
+                        logger.info(f"Created {len(summary_chunks)} summary chunks")
+                    except Exception as e:
+                        logger.error(f"Error creating summary chunks: {e}")
+                
                 # Combine metadata from both scrapers
                 combined_metadata = {
                     **text_metadata,
                     'csv_files_created': csv_files,
-                    'csv_metadata': csv_metadata
+                    'csv_metadata': csv_metadata,
+                    'summary_chunks_created': len(summary_chunks)
                 }
                 all_metadata.append(combined_metadata)
                 success_count += 1
@@ -122,7 +175,8 @@ def _process_articles(text_scraper: OneWikiScraper, csv_scraper: CSVWikiScraper,
                 logger.info(f"Successfully processed: {article_name}")
                 logger.info(f"  - Text sections: {len(sections)}")
                 logger.info(f"  - CSV files: {len(csv_files)}")
-                logger.info(f"  - Chunks: {len(chunks)}")
+                logger.info(f"  - Content chunks: {len(chunks)}")
+                logger.info(f"  - Summary chunks: {len(summary_chunks)}")
             else:
                 logger.warning(f"No content found for article: {article_name}")
         
@@ -141,6 +195,11 @@ def _process_articles(text_scraper: OneWikiScraper, csv_scraper: CSVWikiScraper,
             print(f"  - FAISS index: {rag_db.db_path}/faiss_index.bin")
             print("  - Images saved to: images/")
             print("  - CSV files saved to: csv_files/")
+            
+            # Show summary chunk count if any were created
+            summary_chunk_count = sum(meta.get('summary_chunks_created', 0) for meta in all_metadata)
+            if summary_chunk_count > 0:
+                print(f"  - Summary chunks: {summary_chunk_count}")
         else:
             logger.error("Failed to build database indices")
     else:
@@ -181,7 +240,12 @@ def _test_search_functionality(rag_db: RAGDatabase, logger: logging.Logger) -> N
                     combined_score = result.get('combined_score', 0)
                     content_preview = result['content'][:100] + "..."
                     
-                    print(f"    {i}. {section} (BM25: {bm25_score:.3f}, Semantic: {semantic_score:.3f}, Combined: {combined_score:.3f})")
+                    # Show chunk type if it's a summary
+                    chunk_type = ""
+                    if 'summary_metadata' in result:
+                        chunk_type = f" [SUMMARY: {result['summary_metadata']['summary_type']}]"
+                    
+                    print(f"    {i}. {section}{chunk_type} (BM25: {bm25_score:.3f}, Semantic: {semantic_score:.3f}, Combined: {combined_score:.3f})")
                     print(f"       {content_preview}")
             else:
                 print("  No results found")

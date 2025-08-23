@@ -26,7 +26,7 @@ This is a standalone CSV scraper that extracts tabular data from One Piece Wiki 
 
 ```bash
 # Run the test script
-python csv_scraper_test.py
+python test/csv_scraper_test.py
 ```
 
 This will:

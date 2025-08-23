@@ -1,0 +1,12 @@
+2025-08-23 10:06:50,894 - rag_piece - INFO - setup_logging:61 - Logging initialized - Level: INFO, File: logs\rag_piece_20250823_100650.log
+2025-08-23 10:06:50,894 - rag_piece - INFO - main:326 - Starting article summarizer test
+2025-08-23 10:06:53,995 - rag_piece.summarizer - INFO - summarize_article:130 - Starting summarization for article: Arabasta Kingdom
+2025-08-23 10:06:53,996 - rag_piece.scraper - INFO - scrape_article:45 - Scraping article: Arabasta Kingdom
+2025-08-23 10:06:53,997 - rag_piece.scraper - INFO - _find_sub_articles:80 - Finding sub-articles for: Arabasta Kingdom
+2025-08-23 10:06:55,844 - rag_piece.scraper - INFO - _find_sub_articles:113 - Found 0 sub-articles
+2025-08-23 10:07:40,738 - rag_piece.scraper - INFO - scrape_article:64 - Completed scraping: Arabasta Kingdom (40 sections, 0 images)
+2025-08-23 10:16:07,930 - rag_piece.summarizer - WARNING - _truncate_summary:272 - Summary exceeds 400 tokens (833), truncating...
+2025-08-23 10:16:07,932 - rag_piece.summarizer - INFO - _save_summary:313 - Saved main summary to: summaries\Arabasta_Kingdom\Arabasta_Kingdom_main_summary.txt
+2025-08-23 10:16:07,933 - rag_piece.scraper - INFO - _find_sub_articles:80 - Finding sub-articles for: Arabasta Kingdom
+2025-08-23 10:16:09,827 - rag_piece.scraper - INFO - _find_sub_articles:113 - Found 0 sub-articles
+2025-08-23 10:16:09,831 - rag_piece.summarizer - INFO - summarize_article:184 - Completed summarization for Arabasta Kingdom: 1 summaries created

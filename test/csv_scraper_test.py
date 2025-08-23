@@ -9,7 +9,7 @@ import logging
 from pathlib import Path
 
 # Add the src directory to the Python path
-sys.path.insert(0, str(Path(__file__).parent / "src"))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from rag_piece.csv_scraper import CSVWikiScraper
 from rag_piece.utils import setup_logging

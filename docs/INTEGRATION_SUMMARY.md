@@ -126,7 +126,7 @@ This will:
 
 ### **Test CSV Scraper Independently**
 ```bash
-python csv_scraper_test.py
+python test/csv_scraper_test.py
 ```
 This will:
 1. Test CSV scraper on Conomi Islands article

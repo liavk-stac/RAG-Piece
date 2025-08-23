@@ -11,6 +11,7 @@ __author__ = "RAG-Piece Team"
 from .database import RAGDatabase
 from .config import RAGConfig
 from .scraper import OneWikiScraper
+from .summarizer import ArticleSummarizer
 from .main import main
 
-__all__ = ["RAGDatabase", "RAGConfig", "OneWikiScraper", "main"]
+__all__ = ["RAGDatabase", "RAGConfig", "OneWikiScraper", "ArticleSummarizer", "main"]

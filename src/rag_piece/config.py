@@ -55,6 +55,12 @@ class RAGConfig:
     ENABLE_DEBUG_METADATA: bool = False  # include debug info in chunks
     LOG_LEVEL: str = "INFO"              # logging level
     
+    # === SUMMARIZATION ===
+    ENABLE_SUMMARIZATION: bool = False   # enable article summarization (expensive operation)
+    SUMMARY_MODEL: str = "gpt-4o-mini"  # OpenAI model for summarization
+    SUMMARY_TEMPERATURE: float = 0.3     # temperature for summary generation
+    SAVE_SUMMARIES_TO_FILES: bool = False # save summaries as text files in summaries/ folder
+    
     def __post_init__(self):
         """Initialize default values that can't be set in dataclass"""
         if self.SENTENCE_SEPARATORS is None:
