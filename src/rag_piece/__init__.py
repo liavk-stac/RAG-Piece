@@ -12,6 +12,7 @@ from .database import RAGDatabase
 from .config import RAGConfig
 from .scraper import OneWikiScraper
 from .summarizer import ArticleSummarizer
+from .csv_to_text import CSVToTextConverter
 from .main import main
 
-__all__ = ["RAGDatabase", "RAGConfig", "OneWikiScraper", "ArticleSummarizer", "main"]
+__all__ = ["RAGDatabase", "RAGConfig", "OneWikiScraper", "ArticleSummarizer", "CSVToTextConverter", "main"]

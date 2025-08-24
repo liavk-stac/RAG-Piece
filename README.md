@@ -4,11 +4,12 @@ A comprehensive **Retrieval-Augmented Generation (RAG)** system that scrapes One
 
 ## 🚀 Key Features
 
-### **Integrated Pipeline**
-- **One Command Operation**: Scraping → Chunking → Database Creation → Search Ready
-- **No Intermediate Files**: Direct processing from web to searchable database
-- **Smart Content Processing**: Hybrid chunking with paragraph-based splitting
-- **Automatic Image Management**: High-quality image downloads with filtering
+### **Complete Database Construction Pipeline**
+- **End-to-End Processing**: Scraping → Summarization → CSV Conversion → Chunking → Database → Search Ready
+- **Intelligent Content Processing**: Hybrid chunking with paragraph-based splitting and metadata enrichment
+- **CSV Integration**: Automatic conversion of wiki tables to searchable text using LLM
+- **Duplicate Prevention**: Smart summarization that runs once and reuses summaries across components
+- **Automatic Image Management**: High-quality image downloads with filtering and organization
 
 ### **Advanced Search Capabilities**
 - **Two-Step Retrieval**: BM25 keyword search + semantic similarity ranking
@@ -49,18 +50,37 @@ A comprehensive **Retrieval-Augmented Generation (RAG)** system that scrapes One
 
 ## 🎯 Usage
 
-### **Single Command Operation**
+### **Complete Database Construction Process**
 ```bash
 python main.py
 ```
 
-This command will:
-1. **Scrape** One Piece Wiki articles
-2. **Process** content into intelligent chunks
-3. **Build** BM25 and semantic search indices
-4. **Test** the search functionality
-5. **Save** high-quality images organized by article
-6. **Log** all operations to `logs/` directory
+This command orchestrates the entire pipeline:
+
+#### **Phase 1: Data Collection & Scraping**
+1. **Web Scraping**: Scrapes One Piece Wiki articles using MediaWiki API
+2. **Content Extraction**: Extracts HTML sections, headings, and content
+3. **Image Download**: Downloads high-quality images to `images/[article_name]/`
+4. **CSV Generation**: Converts wiki tables to CSV files in `csv_files/[article_name]/`
+
+#### **Phase 2: Content Processing & Summarization**
+5. **Article Summarization**: Creates comprehensive summaries using OpenAI GPT-4o-mini
+6. **CSV to Text Conversion**: Converts CSV data to structured, searchable text
+7. **Summary Reuse**: Avoids duplicate summarizer runs by sharing summaries across components
+
+#### **Phase 3: Content Chunking & Organization**
+8. **Hybrid Chunking**: Breaks content into optimized chunks using paragraph-based splitting
+9. **Metadata Enrichment**: Adds rich metadata (article, section, sub-sections, keywords)
+10. **Context Preservation**: Maintains relationships between data points
+
+#### **Phase 4: Database Construction & Storage**
+11. **Index Building**: Creates BM25 keyword search and semantic search indices
+12. **Vector Embeddings**: Generates embeddings for semantic similarity search
+13. **Database Assembly**: Combines all processed content into searchable database
+
+#### **Phase 5: Testing & Validation**
+14. **Search Testing**: Validates database functionality with sample queries
+15. **Logging**: Records all operations to `logs/` directory
 
 ### **Search the Database**
 ```python
@@ -112,18 +132,32 @@ RAG-Piece/
 │       ├── keywords.py           # Keyword extraction
 │       ├── search.py             # BM25 and semantic search
 │       ├── scraper.py            # Wiki scraping functionality
+│       ├── summarizer.py         # Article summarization
+│       ├── csv_to_text.py        # CSV to text conversion
 │       └── utils.py              # Utilities and logging
 ├── logs/                         # Application logs
 ├── requirements.txt              # Python dependencies
-├── SCRAPER_DOCUMENTATION.md      # Detailed technical documentation
+├── docs/                         # Comprehensive documentation
+│   ├── CSV_TO_TEXT_README.md     # CSV conversion guide
+│   ├── CHUNKING_AND_METADATA_EXPLANATION.md # Chunking system guide
+│   └── SCRAPER_DOCUMENTATION.md  # Technical documentation
 ├── images/                       # Downloaded images organized by article
-│   └── Arabasta_Kingdom/         # Article-specific image folders
-├── data/
+│   └── [article_name]/           # Article-specific image folders
+├── csv_files/                    # CSV data from wiki tables
+│   └── [article_name]/           # Organized by article
+├── data/                         # Processed data
+│   ├── summaries/                # Article summaries (if enabled)
+│   ├── debug/                    # Debug files
+│   │   └── csv2text/             # CSV conversion debug files
 │   └── rag_db/                   # RAG database files
 │       ├── whoosh_index/         # BM25 keyword search index
 │       ├── faiss_index.bin       # Semantic search index
 │       ├── chunk_mapping.pkl     # Mapping between indices
 │       └── database_metadata.json # Database statistics and info
+├── examples/                     # Usage examples
+│   └── csv_to_text_example.py   # CSV conversion example
+└── test/                         # Test suite
+    └── test_csv_to_text.py      # CSV conversion tests
 └── [legacy files for compatibility]
 ```
 
@@ -169,6 +203,53 @@ results = db.search("kingdom desert citizens")
 - **Code Comments**: Detailed inline documentation
 - **Configuration Guide**: All parameters explained in `RAGConfig` class
 
+## 🔄 Complete Database Construction Process
+
+### **Data Flow Overview**
+```
+One Piece Wiki → Scraping → HTML Content + Images + CSV Tables
+     ↓
+HTML Content → Summarization → Article Summaries
+     ↓
+CSV Tables → LLM Conversion → Structured Text
+     ↓
+All Text → Hybrid Chunking → Optimized Chunks + Rich Metadata
+     ↓
+Chunks → Database → BM25 + Semantic Search Indices
+     ↓
+Ready for Natural Language Queries
+```
+
+### **Key Components & Their Roles**
+
+#### **1. OneWikiScraper**
+- **Purpose**: Extracts content from One Piece Wiki
+- **Output**: HTML sections, images, CSV tables
+- **Organization**: Creates structured folders for each article
+
+#### **2. ArticleSummarizer**
+- **Purpose**: Creates comprehensive article summaries using GPT-4o-mini
+- **Output**: Summary chunks with context
+- **Efficiency**: Runs once per article, summaries reused across components
+
+#### **3. CSVToTextConverter**
+- **Purpose**: Converts wiki tables to searchable text
+- **Input**: CSV files + existing article summaries
+- **Output**: Structured text maintaining data relationships
+- **Debug**: Saves conversion results for quality verification
+
+#### **4. TextChunker**
+- **Purpose**: Breaks content into optimal chunks for vector embedding
+- **Strategy**: Hybrid approach (paragraph → merge → split)
+- **Metadata**: Enriches each chunk with search context
+- **Context**: Maintains relationships between chunks
+
+#### **5. RAGDatabase**
+- **Purpose**: Orchestrates the entire pipeline
+- **Indices**: BM25 keyword search + FAISS semantic search
+- **Integration**: Combines all processed content
+- **Search**: Provides unified search interface
+
 ## 🚀 Getting Started
 
 1. **Quick Start**:
@@ -198,12 +279,23 @@ results = db.search("kingdom desert citizens")
 
 ## 🎉 What Makes This Special
 
+### **Complete RAG Pipeline**
 - **🔥 Zero Configuration**: Works out of the box with sensible defaults
+- **🔄 End-to-End Processing**: From wiki scraping to search-ready database
+- **🧠 Intelligent Content Processing**: LLM-powered summarization and CSV conversion
+- **📊 Rich Data Integration**: Combines articles, tables, and images seamlessly
+
+### **Advanced Search Capabilities**
 - **🧠 Intelligent Search**: Understands context and meaning, not just keywords
 - **⚡ Fast Performance**: Sub-second search on comprehensive content
 - **🎯 High Relevance**: Field boosting ensures the most relevant results first
+- **🔍 Dual Search Strategy**: BM25 keyword + semantic similarity for optimal results
+
+### **Production Features**
 - **🔧 Fully Configurable**: Every parameter can be tuned for your needs
 - **📊 Rich Metadata**: Preserves document structure and relationships
 - **🚀 Production Ready**: Robust error handling and fallback strategies
+- **📝 Comprehensive Logging**: Full audit trail of all operations
+- **🔄 Efficient Processing**: Avoids duplicate work through smart summary reuse
 
 Transform your One Piece research with the power of modern RAG technology! 🏴‍☠️

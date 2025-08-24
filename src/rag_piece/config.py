@@ -61,6 +61,12 @@ class RAGConfig:
     SUMMARY_TEMPERATURE: float = 0.3     # temperature for summary generation
     SAVE_SUMMARIES_TO_FILES: bool = False # save summaries as text files in summaries/ folder
     
+    # === CSV TO TEXT CONVERSION ===
+    ENABLE_CSV_TO_TEXT: bool = False     # enable CSV to text conversion using LLM
+    CSV_TO_TEXT_MODEL: str = "gpt-4o-mini"  # OpenAI model for CSV conversion
+    CSV_TO_TEXT_TEMPERATURE: float = 0.2     # temperature for CSV conversion (lower for consistency)
+    SAVE_CSV_TO_TEXT_FILES: bool = False     # save converted text as files in data/debug/csv2text/ folder
+    
     def __post_init__(self):
         """Initialize default values that can't be set in dataclass"""
         if self.SENTENCE_SEPARATORS is None:
