@@ -157,7 +157,8 @@ def _process_articles(text_scraper: OneWikiScraper, csv_scraper: CSVWikiScraper,
         try:
             summarizer = ArticleSummarizer(
                 max_chunk_size=rag_db.config.MAX_CHUNK_SIZE,
-                save_to_files=rag_db.config.SAVE_SUMMARIES_TO_FILES
+                save_to_files=rag_db.config.SAVE_SUMMARIES_TO_FILES,
+                max_input_tokens=rag_db.config.MAX_INPUT_TEXT_TOKENS
             )
             logger.info("Article summarizer initialized successfully")
         except Exception as e:

@@ -51,9 +51,10 @@ def _print_progress_bar(current: int, total: int, prefix: str = "Progress", widt
 class ArticleSummarizer:
     """Article summarizer using LangChain's refine method with custom prompts."""
     
-    def __init__(self, max_chunk_size: int = 400, save_to_files: bool = False):
+    def __init__(self, max_chunk_size: int = 400, save_to_files: bool = False, max_input_tokens: int = 8000):
         self.max_chunk_size = max_chunk_size
         self.save_to_files = save_to_files
+        self.max_input_tokens = max_input_tokens
         self.logger = logging.getLogger("rag_piece.summarizer")
         
         # Initialize OpenAI LLM
@@ -126,7 +127,7 @@ Refined Summary:"""
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=config.SUMMARY_INPUT_CHUNK_SIZE,  # Use config value
             chunk_overlap=config.SUMMARY_CHUNK_OVERLAP,  # Use config value
-            length_function=len,
+            length_function=count_tokens,  # Use token counting instead of character counting
             separators=["\n\n", "\n", ". ", " ", ""]
         )
     
@@ -357,6 +358,7 @@ Refined Summary:"""
     def _combine_sections(self, sections: List[Dict]) -> str:
         """Combine all sections into a single text for summarization."""
         combined_text = ""
+        total_tokens = 0
         
         for section in sections:
             section_name = section.get('section_name', 'Unknown')
@@ -366,7 +368,24 @@ Refined Summary:"""
             cleaned_content = self._clean_html_content(section_content)
             
             if cleaned_content.strip():
-                combined_text += f"\n\n## {section_name}\n{cleaned_content}"
+                # Check if adding this section would exceed the token limit
+                section_text = f"\n\n## {section_name}\n{cleaned_content}"
+                section_tokens = count_tokens(section_text)
+                
+                if total_tokens + section_tokens > self.max_input_tokens:
+                    self.logger.info(f"⚠️  Truncating at section '{section_name}' to stay within {self.max_input_tokens} token limit")
+                    self.logger.info(f"   Total tokens before truncation: {total_tokens}")
+                    self.logger.info(f"   This section would add: {section_tokens} tokens")
+                    break
+                
+                combined_text += section_text
+                total_tokens += section_tokens
+        
+        final_tokens = count_tokens(combined_text)
+        self.logger.info(f"📝 Combined text: {len(combined_text)} characters, ~{final_tokens} tokens")
+        
+        if final_tokens >= self.max_input_tokens:
+            self.logger.warning(f"⚠️  Combined text is at token limit: {final_tokens}/{self.max_input_tokens}")
         
         return combined_text.strip()
     

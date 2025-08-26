@@ -24,7 +24,7 @@ def main():
     
     try:
         # Initialize the summarizer
-        summarizer = ArticleSummarizer(max_chunk_size=400, save_to_files=True)
+        summarizer = ArticleSummarizer(max_chunk_size=400, save_to_files=True, max_input_tokens=8000)
         
         # Test with Arabasta Kingdom article
         article_name = "Arabasta Kingdom"

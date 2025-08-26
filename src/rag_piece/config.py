@@ -64,6 +64,7 @@ class RAGConfig:
     SUMMARY_MODEL: str = "gpt-4o-mini"  # OpenAI model for summarization
     SUMMARY_TEMPERATURE: float = 0.3     # temperature for summary generation
     SAVE_SUMMARIES_TO_FILES: bool = False # save summaries as text files in summaries/ folder
+    MAX_INPUT_TEXT_TOKENS: int = 8000    # maximum input text length before summarization (truncates long articles)
     
     # === CSV SCRAPING ===
     ENABLE_CSV_SCRAPING: bool = True      # enable table extraction from wiki articles
@@ -126,3 +127,6 @@ class RAGConfig:
         # Validate other parameters
         validate_input(self.SIMILARITY_THRESHOLD, float, "SIMILARITY_THRESHOLD", min_val=0.0, max_val=1.0)
         validate_input(self.FINAL_RESULTS, int, "FINAL_RESULTS", min_val=1)
+        
+        # Validate summarization parameters
+        validate_input(self.MAX_INPUT_TEXT_TOKENS, int, "MAX_INPUT_TEXT_TOKENS", min_val=1000, max_val=50000)

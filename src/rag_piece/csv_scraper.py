@@ -100,7 +100,7 @@ class CSVWikiScraper:
                 return [], {}
             
             # Extract tables from main article
-            tables = self._extract_tables(article_content)
+            tables = self._extract_raw_tables(article_content)
             self.logger.info(f"Found {len(tables)} total tables in {article_name}")
             
             dataframes = []
@@ -138,7 +138,7 @@ class CSVWikiScraper:
                 try:
                     sub_content = self._get_article_content(sub_article)
                     if sub_content:
-                        sub_tables = self._extract_tables(sub_content)
+                        sub_tables = self._extract_raw_tables(sub_content)
                         for i, table in enumerate(sub_tables, 1):
                             try:
                                 df = self._table_to_dataframe(table)
@@ -697,8 +697,8 @@ class CSVWikiScraper:
             self.logger.error(f"Error getting content for {article_name}: {e}")
             return None
     
-    def _extract_tables(self, html_content: str) -> List[BeautifulSoup]:
-        """Extract table elements from HTML content."""
+    def _extract_raw_tables(self, html_content: str) -> List[BeautifulSoup]:
+        """Extract raw table elements from HTML content."""
         soup = BeautifulSoup(html_content, 'html.parser')
         tables = soup.find_all('table', class_='wikitable')
         return tables

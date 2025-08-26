@@ -18,7 +18,7 @@ def test_file_saving():
     
     try:
         # Test with file saving enabled
-        summarizer = ArticleSummarizer(max_chunk_size=400, save_to_files=True)
+        summarizer = ArticleSummarizer(max_chunk_size=400, save_to_files=True, max_input_tokens=8000)
         print(f"✓ Summarizer created with save_to_files = {summarizer.save_to_files}")
         
         # Test the file saving method directly

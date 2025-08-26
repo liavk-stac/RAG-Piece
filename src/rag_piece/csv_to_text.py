@@ -6,6 +6,7 @@ Uses OpenAI GPT-4o-mini to convert CSV files to structured text while maintainin
 import os
 import logging
 import pandas as pd
+import numpy as np
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 from datetime import datetime
@@ -49,7 +50,8 @@ class CSVToTextConverter:
         # Initialize summarizer to get article summaries
         self.summarizer = ArticleSummarizer(
             max_chunk_size=config.MAX_CHUNK_SIZE,
-            save_to_files=config.SAVE_SUMMARIES_TO_FILES
+            save_to_files=config.SAVE_SUMMARIES_TO_FILES,
+            max_input_tokens=config.MAX_INPUT_TEXT_TOKENS
         )
         
         # Custom prompt for CSV to text conversion
@@ -93,6 +95,9 @@ Converted Text:"""
         if config.SAVE_CSV_TO_TEXT_FILES:
             self.debug_dir = Path("data/debug/csv2text")
             self.debug_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Set save_to_files flag
+        self.save_to_files = config.SAVE_CSV_TO_TEXT_FILES
     
     def convert_csv_to_text(self, csv_file_path: str, article_name: str, 
                           existing_summary: str = None) -> Dict[str, Any]:
@@ -199,7 +204,7 @@ Converted Text:"""
             table_text = self._dataframe_to_text(df, table_name)
             
             # Create the prompt for conversion
-            prompt = self._create_conversion_prompt(table_text, article_name, existing_summary, table_name)
+            prompt = self._create_dataframe_conversion_prompt(table_text, article_name, existing_summary, table_name)
             
             # Convert using LLM
             try:
@@ -376,6 +381,7 @@ Converted Text:"""
         csv_filename = Path(csv_file_path).name
         
         result = {
+            'success': True,  # Add missing success field for proper success detection
             'csv_file_path': csv_file_path,
             'csv_filename': csv_filename,
             'article_name': article_name,
@@ -401,6 +407,8 @@ Converted Text:"""
     def _create_error_result(self, error_message: str, csv_file_path: str = "unknown") -> Dict[str, Any]:
         """Create an error result object."""
         return {
+            'success': False,  # Add missing success field for proper error detection
+            'error': error_message,  # Add error field for proper error reporting
             'csv_file_path': csv_file_path,
             'csv_filename': Path(csv_file_path).name if csv_file_path != "unknown" else "unknown",
             'article_name': "unknown",
@@ -457,4 +465,67 @@ Converted Text:"""
             
         except Exception as e:
             self.logger.error(f"Error saving debug file: {e}")
+            return ""
+    
+    def _create_dataframe_conversion_prompt(self, table_text: str, article_name: str, 
+                                          existing_summary: str, table_name: str) -> str:
+        """Create a prompt for converting DataFrame to text."""
+        prompt = f"""You are an expert data analyst specializing in One Piece Wiki content. Your task is to convert table data into well-structured, readable text while maintaining all data relationships and context.
+
+Article: {article_name}
+Table: {table_name}
+Article Summary: {existing_summary}
+
+Table Data:
+{table_text}
+
+Instructions:
+1. Convert the table data into structured, narrative text
+2. Maintain ALL data relationships between columns and rows
+3. Organize information logically and coherently
+4. Use clear, descriptive language that flows naturally
+5. Preserve the context and meaning from the original data
+6. Structure the output with appropriate sections and formatting
+7. Ensure the text is comprehensive and includes all important data points
+8. Make the text suitable for vector embedding and search
+
+Output Format:
+- Use clear headings and subheadings
+- Group related information together
+- Use bullet points or numbered lists where appropriate
+- Maintain chronological or logical order
+- Include all relevant data relationships
+
+Converted Text:"""
+        return prompt
+    
+    def _save_converted_text(self, converted_text: str, article_name: str, 
+                            table_name: str, conversion_type: str) -> str:
+        """Save converted text to a debug file."""
+        try:
+            # Create debug directory if it doesn't exist
+            debug_dir = Path("data/debug/csv2text")
+            debug_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Create article subdirectory
+            article_dir = debug_dir / slugify(article_name)
+            article_dir.mkdir(exist_ok=True)
+            
+            # Generate filename
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"{slugify(table_name)}_{conversion_type}_{timestamp}.txt"
+            file_path = article_dir / filename
+            
+            # Write converted text to file
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(f"# {article_name} - {table_name}\n")
+                f.write(f"Conversion Type: {conversion_type}\n")
+                f.write(f"Timestamp: {timestamp}\n\n")
+                f.write(converted_text)
+            
+            self.logger.info(f"Saved converted text to file: {file_path}")
+            return str(file_path)
+            
+        except Exception as e:
+            self.logger.error(f"Error saving converted text to file: {e}")
             return ""

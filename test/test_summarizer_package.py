@@ -27,7 +27,7 @@ def test_summarizer_initialization():
         print(f"✓ Modified config: ENABLE_SUMMARIZATION = {config.ENABLE_SUMMARIZATION}")
         
         # Test summarizer creation
-        summarizer = ArticleSummarizer(max_chunk_size=config.MAX_CHUNK_SIZE, save_to_files=False)
+        summarizer = ArticleSummarizer(max_chunk_size=config.MAX_CHUNK_SIZE, save_to_files=False, max_input_tokens=8000)
         print(f"✓ Summarizer created with max_chunk_size = {summarizer.max_chunk_size}")
         print(f"✓ Save to files: {summarizer.save_to_files}")
         
@@ -45,7 +45,7 @@ def test_summary_chunk_creation():
         config = RAGConfig()
         config.ENABLE_SUMMARIZATION = True
         
-        summarizer = ArticleSummarizer(max_chunk_size=config.MAX_CHUNK_SIZE, save_to_files=False)
+        summarizer = ArticleSummarizer(max_chunk_size=config.MAX_CHUNK_SIZE, save_to_files=False, max_input_tokens=8000)
         
         # Test with a small article to avoid API costs
         print("Note: This test requires OpenAI API key and will make API calls")
