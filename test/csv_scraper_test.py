@@ -43,7 +43,7 @@ def main():
         
         if csv_files_created:
             print(f"✓ Successfully created {len(csv_files_created)} CSV files!")
-            print(f"  CSV files saved to: csv_files/{metadata.get('csv_folder', 'unknown')}")
+            print(f"  CSV files saved to: data/debug/csv_files/{metadata.get('csv_folder', 'unknown')}")
             
             print(f"\nTable Summary:")
             for table_info in metadata.get('table_summary', []):

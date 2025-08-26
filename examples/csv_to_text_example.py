@@ -53,7 +53,7 @@ def main():
         
         # Example: Convert a CSV file
         # Replace with actual CSV file path and article name
-        csv_file_path = "csv_files/example/example_data.csv"
+        csv_file_path = "data/debug/csv_files/example/example_data.csv"
         article_name = "Example Article"
         
         # If you already have a summary from the database creation process, use it:
@@ -100,8 +100,8 @@ def main():
         print("\n" + "=" * 40)
         print("Example: Converting multiple CSV files")
         
-        # Find CSV files in the csv_files directory
-        csv_dir = Path("csv_files")
+        # Find CSV files in the data/debug/csv_files directory
+        csv_dir = Path("data/debug/csv_files")
         if csv_dir.exists():
             csv_files = list(csv_dir.rglob("*.csv"))
             if csv_files:
@@ -122,9 +122,9 @@ def main():
                     else:
                         print("❌ Multiple CSV conversion failed!")
             else:
-                print("No CSV files found in csv_files directory")
+                print("No CSV files found in data/debug/csv_files directory")
         else:
-            print("csv_files directory not found")
+            print("data/debug/csv_files directory not found")
         
         # Example: Integration with RAG database
         print("\n" + "=" * 40)

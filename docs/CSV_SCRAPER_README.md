@@ -18,7 +18,7 @@ This is a standalone CSV scraper that extracts tabular data from One Piece Wiki 
 3. **Table Detection**: Identifies valid HTML tables using BeautifulSoup
 4. **Data Extraction**: Extracts headers and data rows from each table
 5. **CSV Generation**: Creates properly formatted CSV files with UTF-8 encoding
-6. **File Organization**: Saves CSV files to `csv_files/[article_name]/` folder
+6. **File Organization**: Saves CSV files to `data/debug/csv_files/[article_name]/` folder
 
 ## Usage
 
@@ -33,7 +33,7 @@ This will:
 - Scrape the "Arabasta Kingdom" article
 - Extract all tables
 - Convert them to CSV files
-- Save files to `csv_files/arabasta_kingdom/`
+- Save files to `data/debug/csv_files/arabasta_kingdom/`
 - Display a summary of what was created
 
 ### Programmatic Usage
@@ -55,7 +55,7 @@ print(f"Tables found: {metadata['total_tables_found']}")
 ## Output Structure
 
 ```
-csv_files/
+data/debug/csv_files/
 └── arabasta_kingdom/
     ├── arabasta_kingdom_Table_1.csv
     ├── arabasta_kingdom_Table_2.csv

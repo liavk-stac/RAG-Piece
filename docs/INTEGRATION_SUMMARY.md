@@ -55,8 +55,8 @@ combined_metadata = {
   - 20 chunks indexed
   - Whoosh index: data/rag_db/whoosh_index/
   - FAISS index: data/rag_db/faiss_index.bin
-  - Images saved to: images/
-  - CSV files saved to: csv_files/
+  - Images saved to: data/images/
+  - CSV files saved to: data/debug/csv_files/
 
 Processing Results:
   - Text sections: 40
@@ -104,10 +104,13 @@ RAG-Piece/
 │   ├── database.py          # ✅ RAG database builder
 │   └── utils.py             # ✅ Shared utilities
 ├── csv_scraper_test.py      # ✅ Standalone CSV testing
-├── csv_files/               # ✅ CSV output directory
+├── data/
+│   └── debug/
+│       └── csv_files/       # ✅ CSV output directory
 │   ├── Arabasta_Kingdom/
 │   └── Conomi_Islands/
-├── images/                  # ✅ Image output directory
+├── data/
+│   └── images/              # ✅ Image output directory (under data/)
 ├── data/                    # ✅ RAG database directory
 └── logs/                    # ✅ Comprehensive logging
 ```

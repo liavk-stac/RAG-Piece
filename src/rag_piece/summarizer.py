@@ -457,10 +457,10 @@ Refined Summary:"""
     
     def _save_summary_to_file(self, summary_text: str, article_name: str, 
                              sub_article_name: Optional[str], summary_type: str) -> str:
-        """Save a summary to a text file in the summaries folder."""
+        """Save a summary to a text file in the data/debug/summaries folder."""
         try:
             # Create summaries directory if it doesn't exist
-            summaries_dir = Path("summaries")
+            summaries_dir = Path("data/debug/summaries")
             summaries_dir.mkdir(exist_ok=True)
             
             # Create article subdirectory

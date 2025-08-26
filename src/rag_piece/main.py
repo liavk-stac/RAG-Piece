@@ -77,7 +77,7 @@ def _display_configuration(config: RAGConfig, logger: logging.Logger) -> None:
     if config.ENABLE_CSV_SCRAPING:
         print("  - CSV processing: ENABLED")
         if config.SAVE_CSV_FILES_FOR_DEBUG:
-            print("    - CSV files: Will be saved to csv_files/ folder (debug mode)")
+            print("    - CSV files: Will be saved to data/debug/csv_files/ folder (debug mode)")
         else:
             print("    - CSV files: Will NOT be saved (in-memory processing)")
         print(f"    - Request delay: {config.CSV_REQUEST_DELAY}s")
@@ -112,9 +112,9 @@ def _display_configuration(config: RAGConfig, logger: logging.Logger) -> None:
     if config.ENABLE_SUMMARIZATION and SUMMARIZER_AVAILABLE:
         logger.info(f"  - Summarization: {config.SUMMARY_MODEL} (temperature: {config.SUMMARY_TEMPERATURE})")
         if config.SAVE_SUMMARIES_TO_FILES:
-            logger.info("  - Summary files: Will be saved to summaries/ folder")
+            logger.info("  - Summary files: Will be saved to data/debug/summaries/ folder")
         else:
-            logger.info("  - Summary files: Will NOT be saved to summaries/ folder")
+            logger.info("  - Summary files: Will NOT be saved to data/debug/summaries/ folder")
     
     if config.ENABLE_CSV_TO_TEXT:
         logger.info(f"  - CSV conversion: {config.CSV_TO_TEXT_MODEL} (temperature: {config.CSV_TO_TEXT_TEMPERATURE})")
@@ -137,8 +137,8 @@ def _clear_previous_data(logger: logging.Logger) -> None:
     else:
         print("No previous data folder found, starting fresh")
     
-    print("  Images are stored in separate images/ folder (not cleared automatically)")
-    print("  CSV files are stored in separate csv_files/ folder (not cleared automatically)")
+    print("  Images are stored in data/images/ folder (not cleared automatically)")
+    print("  CSV files are stored in data/debug/csv_files/ folder (not cleared automatically)")
     print()
 
 
@@ -317,8 +317,8 @@ def _process_articles(text_scraper: OneWikiScraper, csv_scraper: CSVWikiScraper,
             print(f"  - {chunk_count} chunks indexed")
             print(f"  - Whoosh index: {rag_db.db_path}/whoosh_index/")
             print(f"  - FAISS index: {rag_db.db_path}/faiss_index.bin")
-            print("  - Images saved to: images/")
-            print("  - CSV files saved to: csv_files/")
+            print("  - Images saved to: data/images/")
+            print("  - CSV files saved to: data/debug/csv_files/")
             
             # Show chunk breakdown
             content_chunk_count = sum(meta.get('content_chunks_created', 0) for meta in all_metadata)

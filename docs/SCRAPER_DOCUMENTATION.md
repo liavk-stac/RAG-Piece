@@ -245,7 +245,7 @@ data/Arabasta_Kingdom/
 
 # NEW: Clean, organized structure
 data/
-├── images/Arabasta_Kingdom/      # ✅ Images only
+├── data/images/Arabasta_Kingdom/      # ✅ Images only
 │   ├── Arabasta_Kingdom.png
 │   └── Alubarna_Infobox.png
 └── rag_db/                       # ✅ Database files

@@ -419,5 +419,5 @@ class OneWikiScraper:
             'total_sections': len(sections),
             'total_images_found': len(images),
             'total_images_downloaded': len(downloaded),
-            'images_folder': f'images/{slugify(article_name)}'
+            'images_folder': f'data/images/{slugify(article_name)}'
         }

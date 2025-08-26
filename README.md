@@ -68,7 +68,7 @@ This command orchestrates the entire pipeline:
 #### **Phase 1: Data Collection & Scraping**
 1. **Web Scraping**: Scrapes One Piece Wiki articles using MediaWiki API
 2. **Content Extraction**: Extracts HTML sections, headings, and content
-3. **Image Download**: Downloads high-quality images to `images/[article_name]/`
+3. **Image Download**: Downloads high-quality images to `data/images/[article_name]/`
 4. **CSV Generation**: Converts wiki tables to CSV files or in-memory DataFrames
 
 #### **Phase 2: Content Processing & Summarization (Parallel)**
@@ -147,13 +147,15 @@ RAG-Piece/
 ├── logs/                         # Application logs
 ├── requirements.txt              # Python dependencies
 ├── docs/                         # Comprehensive documentation
-├── images/                       # Downloaded images organized by article
-│   └── [article_name]/           # Article-specific image folders
-├── csv_files/                    # CSV data from wiki tables (optional)
-│   └── [article_name]/           # Organized by article
 ├── data/                         # Processed data
-│   ├── summaries/                # Article summaries (if enabled)
+│   ├── images/                   # Downloaded images organized by article
+│   │   └── [article_name]/       # Article-specific image folders
+├── data/                         # Processed data
+│   ├── debug/
+│   │   └── summaries/            # Article summaries (if enabled)
 │   ├── debug/                    # Debug files
+│   │   ├── csv_files/            # CSV data from wiki tables (optional)
+│   │   │   └── [article_name]/   # Organized by article
 │   │   └── csv2text/             # CSV conversion debug files
 │   └── rag_db/                   # RAG database files
 │       ├── whoosh_index/         # BM25 keyword search index

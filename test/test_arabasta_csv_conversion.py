@@ -52,7 +52,7 @@ def main():
         print("✓ CSV to Text converter initialized")
         
         # Define the CSV file path and article name
-        csv_file_path = "csv_files/Arabasta_Kingdom/Arabasta_Kingdom_Citizens.csv"
+        csv_file_path = "data/debug/csv_files/Arabasta_Kingdom/Arabasta_Kingdom_Citizens.csv"
         article_name = "Arabasta Kingdom"
         
         # Create a sample article summary for context

@@ -21,8 +21,9 @@ from .utils import slugify, safe_file_operation
 class CSVWikiScraper:
     """CSV scraper for One Piece Wiki content"""
     
-    def __init__(self, request_delay: float = 1.0):
+    def __init__(self, request_delay: float = 1.0, save_to_files: bool = False):
         self.request_delay = request_delay
+        self.save_to_files = save_to_files
         self.logger = logging.getLogger("rag_piece.csv_scraper")
         
         # API configuration
@@ -44,6 +45,11 @@ class CSVWikiScraper:
         """
         try:
             self.logger.info(f"Scraping article for CSV: {article_name}")
+            
+            # Check if we should save files
+            if not self.save_to_files:
+                self.logger.info("CSV file saving disabled, returning empty list")
+                return [], {}
             
             # Create CSV files folder
             csv_folder = self._create_csv_folder(article_name)
@@ -181,7 +187,7 @@ class CSVWikiScraper:
     
     def _create_csv_folder(self, article_name: str) -> Path:
         """Create CSV files folder for the article."""
-        csv_folder = Path("csv_files") / slugify(article_name)
+        csv_folder = Path("data/debug/csv_files") / slugify(article_name)
         csv_folder.mkdir(parents=True, exist_ok=True)
         return csv_folder
     
@@ -655,7 +661,7 @@ class CSVWikiScraper:
             'scraping_timestamp': datetime.now().isoformat(),
             'total_tables_found': len(tables),
             'total_csv_files_created': len(csv_files),
-            'csv_folder': f'csv_files/{slugify(article_name)}',
+            'csv_folder': f'data/debug/csv_files/{slugify(article_name)}',
             'table_summary': [
                 {
                     'table_title': table.get('table_title', 'Unknown'),

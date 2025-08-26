@@ -46,11 +46,16 @@ RAG-Piece/
 │   └── test_file_saving.py
 ├── src/                            # Source code package
 │   └── rag_piece/
-├── csv_files/                      # CSV output files
-├── images/                         # Scraped images
+├── data/
+│   └── debug/
+│       └── csv_files/              # CSV output files
+├── data/
+│   └── images/                     # Scraped images
 ├── data/                           # RAG database
 ├── logs/                           # Log files
-├── summaries/                      # Generated summaries
+├── data/
+│   └── debug/
+│       └── summaries/              # Generated summaries
 ├── requirements.txt                # Python dependencies
 ├── README.md                       # Main project README
 └── main.py                         # Root main script
