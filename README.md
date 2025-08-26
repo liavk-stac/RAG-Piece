@@ -2,6 +2,8 @@
 
 A comprehensive **Retrieval-Augmented Generation (RAG)** system that scrapes One Piece Wiki content and creates an intelligent, searchable database using both keyword (BM25) and semantic search technologies.
 
+> **🆕 Latest Update**: Fixed image download paths, added API retry logic with caching, and improved system reliability. All images now download to `data/images/[article_name]/` as expected!
+
 ## 🚀 Key Features
 
 ### **Complete Database Construction Pipeline**
@@ -197,6 +199,14 @@ CSV_TO_TEXT_MODEL: str = "gpt-4o-mini"  # OpenAI model for conversion
 CSV_TO_TEXT_TEMPERATURE: float = 0.2     # temperature for consistency
 ```
 
+### **API Reliability Configuration**
+```python
+# === API RETRY SETTINGS ===
+API_MAX_RETRIES: int = 3               # maximum API retry attempts
+API_BASE_DELAY: float = 2.0            # base delay between retries (seconds)
+API_RETRY_EXPONENTIAL: bool = True     # use exponential backoff for retries
+```
+
 ### **Articles Configuration**
 ```python
 # === ARTICLES TO SCRAPE ===
@@ -236,6 +246,20 @@ results = db.search("kingdom desert citizens")
 ```
 
 ## 🆕 Recent Improvements
+
+### **Image Download System (FIXED!)**
+- **Correct Path Structure**: Images now download to `data/images/[article_name]/` as expected
+- **Metadata Consistency**: Fixed metadata key mismatch (`images_downloaded` vs `total_images_downloaded`)
+- **Quality Filtering**: Downloads only high-quality images (100x100 minimum resolution)
+- **Organized Storage**: Each article gets its own image folder with proper naming
+
+### **API Reliability & Caching (NEW!)**
+- **Retry Logic**: 3-attempt retry with exponential backoff (2s, 4s, 8s delays)
+- **Shared Sub-Article Cache**: Eliminates duplicate API calls between scraper instances
+- **Configurable Retry Settings**: `API_MAX_RETRIES` and `API_BASE_DELAY` in config
+- **Consistent Results**: Both text and CSV scrapers now return identical sub-article counts
+- **Rate Limiting**: Built-in delays between API requests to respect MediaWiki limits
+- **Error Recovery**: Graceful handling of temporary API failures and network issues
 
 ### **Overlapping Chunks (NEW!)**
 - **Better Context Preservation**: 50-token overlap between chunks prevents information loss
@@ -329,6 +353,30 @@ Ready for Natural Language Queries
    python -m src.rag_piece.main
    ```
 
+## 🔧 Troubleshooting
+
+### **Common Issues & Solutions**
+
+#### **Image Download Problems**
+- **Issue**: Images not downloading or wrong location
+- **Solution**: Ensure `data/images/` directory exists and has write permissions
+- **Check**: Verify images are in `data/images/[article_name]/` folders
+
+#### **API Rate Limiting**
+- **Issue**: "API request failed" errors
+- **Solution**: Increase `API_BASE_DELAY` in config (default: 2.0 seconds)
+- **Check**: Look for retry attempts in logs
+
+#### **Sub-Article Inconsistencies**
+- **Issue**: Different sub-article counts between runs
+- **Solution**: The new caching system should eliminate this (check logs for "Using cached sub-articles")
+- **Check**: Verify both scrapers show identical counts in logs
+
+#### **Memory Issues with Large Articles**
+- **Issue**: Out of memory during processing
+- **Solution**: Reduce `MAX_CHUNK_SIZE` and `TARGET_CHUNK_SIZE` in config
+- **Check**: Monitor memory usage in logs
+
 2. **Test Search**:
    ```python
    from src.rag_piece import RAGDatabase, RAGConfig
@@ -364,6 +412,13 @@ Ready for Natural Language Queries
 - **🧠 Intelligent Content Processing**: LLM-powered summarization and CSV conversion
 - **📊 Rich Data Integration**: Combines articles, tables, and images seamlessly
 - **🔄 Parallel Processing**: Multiple operations run simultaneously for efficiency
+
+### **Robust Testing & Validation**
+- **🧪 Comprehensive Test Suite**: `test_complete_rag_system.py` validates entire pipeline
+- **✅ Image Download Verification**: Confirms images are saved to correct locations
+- **📊 Metadata Validation**: Ensures consistent data structure across components
+- **🔄 End-to-End Testing**: Tests complete workflow from scraping to search
+- **📝 Detailed Logging**: Full audit trail for debugging and monitoring
 
 ### **Advanced Search Capabilities**
 - **🧠 Intelligent Search**: Understands context and meaning, not just keywords

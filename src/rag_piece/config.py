@@ -77,6 +77,11 @@ class RAGConfig:
     CSV_TO_TEXT_TEMPERATURE: float = 0.2     # temperature for CSV conversion (lower for consistency)
     SAVE_CSV_TO_TEXT_FILES: bool = False     # save converted text as files in data/debug/csv2text/ folder
     
+    # === API RETRY SETTINGS ===
+    API_MAX_RETRIES: int = 3               # maximum API retry attempts
+    API_BASE_DELAY: float = 2.0            # base delay between retries (seconds)
+    API_RETRY_EXPONENTIAL: bool = True     # use exponential backoff for retries
+    
     # === ARTICLES TO SCRAPE ===
     ARTICLES_TO_SCRAPE: List[str] = field(default_factory=lambda: ["Arabasta Kingdom"])  # list of One Piece Wiki articles to scrape
     

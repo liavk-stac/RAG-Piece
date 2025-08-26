@@ -21,6 +21,9 @@ from .utils import slugify, safe_file_operation
 class CSVWikiScraper:
     """CSV scraper for One Piece Wiki content"""
     
+    # Class-level cache for sub-articles to avoid duplicate API calls
+    _sub_articles_cache = {}
+    
     def __init__(self, request_delay: float = 1.0, save_to_files: bool = False):
         self.request_delay = request_delay
         self.save_to_files = save_to_files
@@ -192,47 +195,77 @@ class CSVWikiScraper:
         return csv_folder
     
     def _find_sub_articles(self, article_name: str) -> List[str]:
-        """Find sub-articles for the main article."""
-        try:
-            self.logger.info(f"Finding sub-articles for: {article_name}")
-            
-            # Search for sub-articles using API
-            search_params = {
-                'action': 'query',
-                'format': 'json',
-                'list': 'search',
-                'srsearch': f'"{article_name}/"',
-                'srnamespace': 0,
-                'srlimit': 50
-            }
-            
-            response = self._make_api_request(search_params)
-            if not response:
-                return []
-            
-            sub_articles = []
-            search_results = response.get('query', {}).get('search', [])
-            
-            for result in search_results:
-                title = result['title']
-                if title.startswith(f"{article_name}/"):
-                    sub_articles.append(title)
-            
-            # Add common sub-article patterns
-            common_patterns = ['Gallery', 'Images', 'Pictures', 'History']
-            for pattern in common_patterns:
-                potential_sub = f"{article_name}/{pattern}"
-                if potential_sub not in sub_articles:
-                    # Check if it exists
-                    if self._article_exists(potential_sub):
-                        sub_articles.append(potential_sub)
-            
-            self.logger.info(f"Found {len(sub_articles)} sub-articles")
-            return sub_articles
+        """Find sub-articles for the main article with retry logic and caching."""
+        # Check cache first to avoid duplicate API calls
+        if article_name in self._sub_articles_cache:
+            cached_result = self._sub_articles_cache[article_name]
+            self.logger.info(f"Using cached sub-articles for {article_name}: {len(cached_result)} found")
+            return cached_result
         
-        except Exception as e:
-            self.logger.error(f"Error finding sub-articles: {e}", exc_info=True)
-            return []
+        # Use configuration values if available, otherwise use defaults
+        try:
+            max_retries = getattr(self, 'config', None) and getattr(self.config, 'API_MAX_RETRIES', 3) or 3
+            base_delay = getattr(self, 'config', None) and getattr(self.config, 'API_BASE_DELAY', 2.0) or 2.0
+        except:
+            max_retries = 3
+            base_delay = 2.0
+        
+        for attempt in range(max_retries):
+            try:
+                self.logger.info(f"Finding sub-articles for: {article_name} (attempt {attempt + 1}/{max_retries})")
+                
+                # Search for sub-articles using API
+                search_params = {
+                    'action': 'query',
+                    'format': 'json',
+                    'list': 'search',
+                    'srsearch': f'"{article_name}/"',
+                    'srnamespace': 0,
+                    'srlimit': 50
+                }
+                
+                response = self._make_api_request(search_params)
+                if not response:
+                    if attempt < max_retries - 1:
+                        delay = base_delay * (2 ** attempt)
+                        self.logger.warning(f"API request failed, retrying in {delay}s...")
+                        time.sleep(delay)
+                        continue
+                    return []
+                
+                sub_articles = []
+                search_results = response.get('query', {}).get('search', [])
+                
+                for result in search_results:
+                    title = result['title']
+                    if title.startswith(f"{article_name}/"):
+                        sub_articles.append(title)
+                
+                # Add common sub-article patterns
+                common_patterns = ['Gallery', 'Images', 'Pictures', 'History']
+                for pattern in common_patterns:
+                    potential_sub = f"{article_name}/{pattern}"
+                    if potential_sub not in sub_articles:
+                        # Check if it exists
+                        if self._article_exists(potential_sub):
+                            sub_articles.append(potential_sub)
+                
+                # Cache the result for future use
+                self._sub_articles_cache[article_name] = sub_articles
+                
+                self.logger.info(f"Found {len(sub_articles)} sub-articles")
+                return sub_articles
+            
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    delay = base_delay * (2 ** attempt)
+                    self.logger.warning(f"Error finding sub-articles (attempt {attempt + 1}): {e}, retrying in {delay}s...")
+                    time.sleep(delay)
+                else:
+                    self.logger.error(f"Error finding sub-articles after {max_retries} attempts: {e}", exc_info=True)
+                    return []
+        
+        return []
     
     def _scrape_all_tables(self, main_article: str, sub_articles: List[str]) -> Tuple[List[Dict], List[str]]:
         """Scrape tables from main article and all sub-articles."""
