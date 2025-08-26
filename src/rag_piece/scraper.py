@@ -70,7 +70,7 @@ class OneWikiScraper:
     
     def _create_images_folder(self, article_name: str) -> Path:
         """Create images folder for the article."""
-        images_folder = Path("images") / slugify(article_name)
+        images_folder = Path("data/images") / slugify(article_name)
         images_folder.mkdir(parents=True, exist_ok=True)
         return images_folder
     
@@ -418,6 +418,6 @@ class OneWikiScraper:
             'scraping_timestamp': datetime.now().isoformat(),
             'total_sections': len(sections),
             'total_images_found': len(images),
-            'total_images_downloaded': len(downloaded),
+            'images_downloaded': len(downloaded),
             'images_folder': f'data/images/{slugify(article_name)}'
         }
