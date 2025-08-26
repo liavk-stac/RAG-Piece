@@ -2,7 +2,7 @@
 Configuration settings for the RAG Piece system.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List
 
 
@@ -10,13 +10,17 @@ from typing import List
 class RAGConfig:
     """Global configuration for RAG system - all parameters in one place for easy tuning"""
     
-    # === CHUNKING PARAMETERS ===
-    MIN_CHUNK_SIZE: int = 100            # tokens - merge if below this
-    MAX_CHUNK_SIZE: int = 400            # tokens - split if above this
-    OVERLAP_SIZE: int = 50               # tokens - overlap when splitting
-    TARGET_CHUNK_SIZE: int = 250         # tokens - ideal chunk size
-    PARAGRAPH_SEPARATOR: str = "\n\n"    # how to split into paragraphs
-    SENTENCE_SEPARATORS: List[str] = None
+    # === CHUNKING ===
+    MAX_CHUNK_SIZE: int = 400          # maximum chunk size in tokens
+    MIN_CHUNK_SIZE: int = 50           # minimum chunk size in tokens
+    TARGET_CHUNK_SIZE: int = 300       # target chunk size in tokens
+    CHUNK_OVERLAP: int = 50            # overlap between chunks in tokens
+    PARAGRAPH_SEPARATOR: str = "\n\n"  # separator for paragraph splitting
+    SENTENCE_SEPARATORS: List[str] = field(default_factory=lambda: [". ", "! ", "? ", "\n"])  # separators for sentence splitting
+    
+    # === SUMMARIZATION CHUNKING ===
+    SUMMARY_INPUT_CHUNK_SIZE: int = 800      # input chunk size for summarization (MAX_CHUNK_SIZE * 2)
+    SUMMARY_CHUNK_OVERLAP: int = 100        # overlap between summarization chunks
     
     # === BM25 PARAMETERS ===
     BM25_K1: float = 1.2                # term frequency saturation
@@ -56,16 +60,24 @@ class RAGConfig:
     LOG_LEVEL: str = "INFO"              # logging level
     
     # === SUMMARIZATION ===
-    ENABLE_SUMMARIZATION: bool = False   # enable article summarization (expensive operation)
+    ENABLE_SUMMARIZATION: bool = True   # enable article summarization (expensive operation)
     SUMMARY_MODEL: str = "gpt-4o-mini"  # OpenAI model for summarization
     SUMMARY_TEMPERATURE: float = 0.3     # temperature for summary generation
     SAVE_SUMMARIES_TO_FILES: bool = False # save summaries as text files in summaries/ folder
     
+    # === CSV SCRAPING ===
+    ENABLE_CSV_SCRAPING: bool = True      # enable table extraction from wiki articles
+    SAVE_CSV_FILES_FOR_DEBUG: bool = False # save CSV files to disk (for debugging only)
+    CSV_REQUEST_DELAY: float = 1.0         # delay between requests to avoid rate limiting
+    
     # === CSV TO TEXT CONVERSION ===
-    ENABLE_CSV_TO_TEXT: bool = False     # enable CSV to text conversion using LLM
+    ENABLE_CSV_TO_TEXT: bool = True     # enable CSV to text conversion using LLM
     CSV_TO_TEXT_MODEL: str = "gpt-4o-mini"  # OpenAI model for CSV conversion
     CSV_TO_TEXT_TEMPERATURE: float = 0.2     # temperature for CSV conversion (lower for consistency)
     SAVE_CSV_TO_TEXT_FILES: bool = False     # save converted text as files in data/debug/csv2text/ folder
+    
+    # === ARTICLES TO SCRAPE ===
+    ARTICLES_TO_SCRAPE: List[str] = field(default_factory=lambda: ["Arabasta Kingdom"])  # list of One Piece Wiki articles to scrape
     
     def __post_init__(self):
         """Initialize default values that can't be set in dataclass"""
@@ -81,7 +93,8 @@ class RAGConfig:
         validate_input(self.MAX_CHUNK_SIZE, int, "MAX_CHUNK_SIZE", min_val=self.MIN_CHUNK_SIZE)
         validate_input(self.TARGET_CHUNK_SIZE, int, "TARGET_CHUNK_SIZE", 
                       min_val=self.MIN_CHUNK_SIZE, max_val=self.MAX_CHUNK_SIZE)
-        validate_input(self.OVERLAP_SIZE, int, "OVERLAP_SIZE", min_val=0)
+        validate_input(self.CHUNK_OVERLAP, int, "CHUNK_OVERLAP", min_val=0, max_val=self.MAX_CHUNK_SIZE // 2)
+        validate_input(self.SUMMARY_CHUNK_OVERLAP, int, "SUMMARY_CHUNK_OVERLAP", min_val=0)
         
         # Validate BM25 parameters
         validate_input(self.BM25_K1, float, "BM25_K1", min_val=0.0)

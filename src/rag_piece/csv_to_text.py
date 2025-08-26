@@ -177,6 +177,106 @@ Converted Text:"""
         
         return results
     
+    def convert_dataframe_to_text(self, df: pd.DataFrame, article_name: str, 
+                                 existing_summary: str = "", table_name: str = "Unknown") -> Dict[str, Any]:
+        """
+        Convert a pandas DataFrame directly to text using LLM processing.
+        This method does not require CSV files and works with in-memory DataFrames.
+        
+        Args:
+            df: pandas DataFrame to convert
+            article_name: Name of the article the table belongs to
+            existing_summary: Optional existing summary for context
+            table_name: Name/description of the table
+            
+        Returns:
+            Dictionary with conversion results
+        """
+        try:
+            self.logger.info(f"Converting DataFrame to text: {table_name} ({len(df)} rows, {len(df.columns)} columns)")
+            
+            # Convert DataFrame to a readable format
+            table_text = self._dataframe_to_text(df, table_name)
+            
+            # Create the prompt for conversion
+            prompt = self._create_conversion_prompt(table_text, article_name, existing_summary, table_name)
+            
+            # Convert using LLM
+            try:
+                converted_text = self.llm.invoke(prompt)
+                self.logger.info(f"Successfully converted DataFrame: {table_name}")
+                
+                # Save to file if enabled
+                if self.save_to_files:
+                    self._save_converted_text(converted_text, article_name, table_name, "dataframe")
+                
+                return {
+                    'success': True,
+                    'converted_text': converted_text,
+                    'table_name': table_name,
+                    'rows_processed': len(df),
+                    'columns_processed': len(df.columns),
+                    'conversion_method': 'dataframe_direct'
+                }
+                
+            except Exception as e:
+                self.logger.error(f"LLM conversion failed for DataFrame {table_name}: {e}")
+                return {
+                    'success': False,
+                    'error': f"LLM conversion failed: {str(e)}",
+                    'table_name': table_name
+                }
+                
+        except Exception as e:
+            self.logger.error(f"Error converting DataFrame to text: {e}")
+            return {
+                'success': False,
+                'error': f"DataFrame conversion error: {str(e)}",
+                'table_name': table_name
+            }
+    
+    def _dataframe_to_text(self, df: pd.DataFrame, table_name: str) -> str:
+        """Convert a DataFrame to a readable text format."""
+        try:
+            # Get basic table info
+            rows, cols = df.shape
+            
+            # Create header section
+            text = f"Table: {table_name}\n"
+            text += f"Dimensions: {rows} rows × {cols} columns\n\n"
+            
+            # Add column names
+            text += "Columns:\n"
+            for i, col in enumerate(df.columns, 1):
+                text += f"  {i}. {col}\n"
+            text += "\n"
+            
+            # Add sample data (first 5 rows)
+            text += "Sample Data:\n"
+            sample_rows = min(5, rows)
+            for i in range(sample_rows):
+                row_data = df.iloc[i]
+                text += f"Row {i+1}: "
+                row_text = []
+                for col, val in row_data.items():
+                    if pd.notna(val) and str(val).strip():
+                        row_text.append(f"{col}: {val}")
+                text += "; ".join(row_text) + "\n"
+            
+            # Add summary statistics if numeric columns exist
+            numeric_cols = df.select_dtypes(include=[np.number]).columns
+            if len(numeric_cols) > 0:
+                text += "\nNumeric Column Statistics:\n"
+                for col in numeric_cols:
+                    if df[col].notna().any():
+                        text += f"  {col}: min={df[col].min():.2f}, max={df[col].max():.2f}, mean={df[col].mean():.2f}\n"
+            
+            return text
+            
+        except Exception as e:
+            self.logger.error(f"Error formatting DataFrame: {e}")
+            return f"Error formatting table {table_name}: {str(e)}"
+    
     def _read_csv_file(self, csv_file_path: str) -> Optional[pd.DataFrame]:
         """Read and validate CSV file."""
         try:

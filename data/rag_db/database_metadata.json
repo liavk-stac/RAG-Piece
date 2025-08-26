@@ -1,6 +1,6 @@
 {
   "creation_timestamp": "C:\\Users\\liav korem\\Desktop\\AI Course\\RAG-Piece",
-  "total_chunks": 20,
+  "total_chunks": 21,
   "config": {
     "embedding_model": "all-MiniLM-L6-v2",
     "chunk_size_range": "100-400",
@@ -10,10 +10,10 @@
   },
   "statistics": {
     "total_articles": 1,
-    "total_sections": 15,
-    "avg_chunk_size": 547.5,
+    "total_sections": 16,
+    "avg_chunk_size": 538.4285714285714,
     "min_chunk_size": 104,
     "max_chunk_size": 3261,
-    "total_tokens": 10950
+    "total_tokens": 11307
   }
 }

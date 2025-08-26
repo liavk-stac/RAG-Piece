@@ -39,7 +39,10 @@ def main():
         
         # Initialize components
         text_scraper = OneWikiScraper(max_images=20)
-        csv_scraper = CSVWikiScraper(request_delay=1.0)
+        csv_scraper = CSVWikiScraper(
+            request_delay=config.CSV_REQUEST_DELAY,
+            save_to_files=config.SAVE_CSV_FILES_FOR_DEBUG
+        )
         rag_db = RAGDatabase(config)
         
         # Scrape articles and build database
@@ -63,22 +66,46 @@ def _display_configuration(config: RAGConfig, logger: logging.Logger) -> None:
     print("Configuration:")
     print("  - Maximum images per article: 20")
     print("  - Direct processing: text → chunks → database (no intermediate files)")
+    print(f"  - Chunking: {config.MIN_CHUNK_SIZE}-{config.MAX_CHUNK_SIZE} tokens (target: {config.TARGET_CHUNK_SIZE}, overlap: {config.CHUNK_OVERLAP})")
     print("  - CSV extraction: Tables → CSV files")
+    print("  - Parallel processing: Content chunking + Summarization + CSV conversion")
+    
+    # Show articles to be scraped
+    print(f"  - Articles to scrape: {', '.join(config.ARTICLES_TO_SCRAPE)}")
+    
+    # Show CSV processing status
+    if config.ENABLE_CSV_SCRAPING:
+        print("  - CSV processing: ENABLED")
+        if config.SAVE_CSV_FILES_FOR_DEBUG:
+            print("    - CSV files: Will be saved to csv_files/ folder (debug mode)")
+        else:
+            print("    - CSV files: Will NOT be saved (in-memory processing)")
+        print(f"    - Request delay: {config.CSV_REQUEST_DELAY}s")
+    else:
+        print("  - CSV processing: DISABLED")
     
     # Show summarization status
     if config.ENABLE_SUMMARIZATION:
         if SUMMARIZER_AVAILABLE:
-            print("  - Article summarization: ENABLED (using OpenAI)")
+            print(f"  - Article summarization: ENABLED (using OpenAI)")
+            print(f"    - Summary input chunks: {config.SUMMARY_INPUT_CHUNK_SIZE} tokens")
+            print(f"    - Summary chunk overlap: {config.SUMMARY_CHUNK_OVERLAP} tokens")
         else:
             print("  - Article summarization: ENABLED but summarizer not available")
             print("    (article_summarizer.py not found in root directory)")
     else:
-        print("  - Article summarization: DISABLED (expensive operation)")
+        print("  - Article summarization: DISABLED")
+    
+    # Show CSV to text conversion status
+    if config.ENABLE_CSV_TO_TEXT:
+        print("  - CSV to text conversion: ENABLED (using OpenAI)")
+    else:
+        print("  - CSV to text conversion: DISABLED")
     
     print()
     
     logger.info("RAG Configuration:")
-    logger.info(f"  - Chunking: {config.MIN_CHUNK_SIZE}-{config.MAX_CHUNK_SIZE} tokens (target: {config.TARGET_CHUNK_SIZE})")
+    logger.info(f"  - Chunking: {config.MIN_CHUNK_SIZE}-{config.MAX_CHUNK_SIZE} tokens (target: {config.TARGET_CHUNK_SIZE}, overlap: {config.CHUNK_OVERLAP})")
     logger.info(f"  - Keywords: {config.KEYWORDS_PER_CHUNK} per chunk using BM25 scoring")
     logger.info(f"  - Embedding model: {config.EMBEDDING_MODEL}")
     
@@ -88,6 +115,13 @@ def _display_configuration(config: RAGConfig, logger: logging.Logger) -> None:
             logger.info("  - Summary files: Will be saved to summaries/ folder")
         else:
             logger.info("  - Summary files: Will NOT be saved to summaries/ folder")
+    
+    if config.ENABLE_CSV_TO_TEXT:
+        logger.info(f"  - CSV conversion: {config.CSV_TO_TEXT_MODEL} (temperature: {config.CSV_TO_TEXT_TEMPERATURE})")
+        if config.SAVE_CSV_TO_TEXT_FILES:
+            logger.info("  - CSV conversion files: Will be saved to data/debug/csv2text/ folder")
+        else:
+            logger.info("  - CSV conversion files: Will NOT be saved to debug folder")
 
 
 def _clear_previous_data(logger: logging.Logger) -> None:
@@ -110,8 +144,8 @@ def _clear_previous_data(logger: logging.Logger) -> None:
 
 def _process_articles(text_scraper: OneWikiScraper, csv_scraper: CSVWikiScraper, rag_db: RAGDatabase, logger: logging.Logger) -> int:
     """Process all articles and build the database."""
-    # Define articles to scrape
-    articles = ["Arabasta Kingdom"]
+    # Get articles to scrape from config
+    articles = rag_db.config.ARTICLES_TO_SCRAPE
     
     all_chunks = []
     all_metadata = []
@@ -128,10 +162,21 @@ def _process_articles(text_scraper: OneWikiScraper, csv_scraper: CSVWikiScraper,
             logger.info("Article summarizer initialized successfully")
         except Exception as e:
             logger.error(f"Failed to initialize summarizer: {e}")
-            logger.warning("Continuing without summarization")
             summarizer = None
     elif rag_db.config.ENABLE_SUMMARIZATION and not SUMMARIZER_AVAILABLE:
         logger.warning("Summarization enabled but summarizer not available")
+    
+    # Initialize CSV to text converter if enabled
+    csv_converter = None
+    if rag_db.config.ENABLE_CSV_TO_TEXT:
+        try:
+            from .csv_to_text import CSVToTextConverter
+            csv_converter = CSVToTextConverter(rag_db.config)
+            logger.info("CSV to text converter initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to initialize CSV converter: {e}")
+            logger.warning("Continuing without CSV to text conversion")
+            csv_converter = None
     
     logger.info(f"Processing {len(articles)} articles")
     
@@ -144,30 +189,108 @@ def _process_articles(text_scraper: OneWikiScraper, csv_scraper: CSVWikiScraper,
             sections, text_metadata = text_scraper.scrape_article(article_name)
             
             logger.info("Running CSV scraper...")
-            csv_files, csv_metadata = csv_scraper.scrape_article_to_csv(article_name)
+            if rag_db.config.ENABLE_CSV_SCRAPING:
+                if rag_db.config.SAVE_CSV_FILES_FOR_DEBUG:
+                    # Use traditional CSV file creation for debugging
+                    csv_files, csv_metadata = csv_scraper.scrape_article_to_csv(article_name)
+                else:
+                    # Use new in-memory approach (preferred)
+                    dataframes, csv_metadata = csv_scraper.extract_tables_in_memory(article_name)
+                    csv_files = []  # No CSV files created
+            else:
+                csv_files, csv_metadata = [], {}
+                dataframes = []
             
             if sections:
+                # PARALLEL PROCESSING: Content chunking and summarization happen simultaneously
+                logger.info("Processing content and generating summaries in parallel...")
+                
                 # Process sections into chunks
                 chunks = rag_db.process_sections_directly(sections, article_name)
-                all_chunks.extend(chunks)
                 
-                # Create summary chunks if summarizer is available
+                # Generate summaries immediately after scraping (parallel to chunking)
                 summary_chunks = []
                 if summarizer:
                     try:
-                        logger.info("Creating summary chunks...")
+                        logger.info("Generating article summaries...")
                         summary_chunks = summarizer.create_summary_chunks(article_name)
-                        all_chunks.extend(summary_chunks)
-                        logger.info(f"Created {len(summary_chunks)} summary chunks")
+                        logger.info(f"Generated {len(summary_chunks)} summary chunks")
                     except Exception as e:
-                        logger.error(f"Error creating summary chunks: {e}")
+                        logger.error(f"Error generating summaries: {e}")
+                
+                # Process CSV files to text chunks using the freshly generated summaries
+                csv_chunks = []
+                if csv_converter and (csv_files or dataframes):
+                    try:
+                        logger.info("Converting CSV data to text chunks...")
+                        # Get the main article summary for CSV conversion context
+                        main_summary = ""
+                        if summary_chunks:
+                            # Find the main article summary
+                            for summary_chunk in summary_chunks:
+                                if summary_chunk.get('summary_metadata', {}).get('summary_type') == 'main_article':
+                                    main_summary = summary_chunk.get('content', '')
+                                    break
+                        
+                        # Process CSV data (either files or in-memory DataFrames)
+                        if dataframes:
+                            # Process in-memory DataFrames directly
+                            for i, df in enumerate(dataframes):
+                                try:
+                                    # Convert DataFrame to text using the converter
+                                    table_name = csv_metadata.get('table_details', [{}])[i].get('table_name', f'Table_{i+1}')
+                                    result = csv_converter.convert_dataframe_to_text(df, article_name, main_summary, table_name)
+                                    if result.get('success') and result.get('converted_text'):
+                                        # Create chunks from the converted CSV text
+                                        csv_text_chunks = rag_db.process_sections_directly([
+                                            {
+                                                'combined_title': f"CSV Data: {table_name}",
+                                                'content': result['converted_text'],
+                                                'article_source': article_name,
+                                                'section_index': 0
+                                            }
+                                        ], article_name)
+                                        csv_chunks.extend(csv_text_chunks)
+                                        logger.info(f"Created {len(csv_text_chunks)} chunks from DataFrame: {table_name}")
+                                except Exception as e:
+                                    logger.error(f"Error processing DataFrame {i}: {e}")
+                        elif csv_files:
+                            # Process CSV files (for debugging mode)
+                            for csv_file in csv_files:
+                                try:
+                                    result = csv_converter.convert_csv_to_text(csv_file, article_name, main_summary)
+                                    if result.get('success') and result.get('converted_text'):
+                                        # Create chunks from the converted CSV text
+                                        csv_text_chunks = rag_db.process_sections_directly([
+                                            {
+                                                'combined_title': f"CSV Data: {Path(csv_file).stem}",
+                                                'content': result['converted_text'],
+                                                'article_source': article_name,
+                                                'section_index': 0
+                                            }
+                                        ], article_name)
+                                        csv_chunks.extend(csv_text_chunks)
+                                        logger.info(f"Created {len(csv_text_chunks)} chunks from CSV: {Path(csv_file).name}")
+                                except Exception as e:
+                                    logger.error(f"Error processing CSV file {csv_file}: {e}")
+                        
+                        logger.info(f"Created {len(csv_chunks)} total CSV text chunks")
+                    except Exception as e:
+                        logger.error(f"Error in CSV to text conversion: {e}")
+                
+                # Combine all chunks (content + summaries + CSV text)
+                all_chunks.extend(chunks)
+                all_chunks.extend(summary_chunks)
+                all_chunks.extend(csv_chunks)
                 
                 # Combine metadata from both scrapers
                 combined_metadata = {
                     **text_metadata,
                     'csv_files_created': csv_files,
                     'csv_metadata': csv_metadata,
-                    'summary_chunks_created': len(summary_chunks)
+                    'summary_chunks_created': len(summary_chunks),
+                    'content_chunks_created': len(chunks),
+                    'csv_text_chunks_created': len(csv_chunks)
                 }
                 all_metadata.append(combined_metadata)
                 success_count += 1
@@ -177,6 +300,7 @@ def _process_articles(text_scraper: OneWikiScraper, csv_scraper: CSVWikiScraper,
                 logger.info(f"  - CSV files: {len(csv_files)}")
                 logger.info(f"  - Content chunks: {len(chunks)}")
                 logger.info(f"  - Summary chunks: {len(summary_chunks)}")
+                logger.info(f"  - CSV text chunks: {len(csv_chunks)}")
             else:
                 logger.warning(f"No content found for article: {article_name}")
         
@@ -196,10 +320,13 @@ def _process_articles(text_scraper: OneWikiScraper, csv_scraper: CSVWikiScraper,
             print("  - Images saved to: images/")
             print("  - CSV files saved to: csv_files/")
             
-            # Show summary chunk count if any were created
+            # Show chunk breakdown
+            content_chunk_count = sum(meta.get('content_chunks_created', 0) for meta in all_metadata)
             summary_chunk_count = sum(meta.get('summary_chunks_created', 0) for meta in all_metadata)
-            if summary_chunk_count > 0:
-                print(f"  - Summary chunks: {summary_chunk_count}")
+            csv_chunk_count = sum(meta.get('csv_text_chunks_created', 0) for meta in all_metadata)
+            print(f"  - Content chunks: {content_chunk_count}")
+            print(f"  - Summary chunks: {summary_chunk_count}")
+            print(f"  - CSV text chunks: {csv_chunk_count}")
         else:
             logger.error("Failed to build database indices")
     else:

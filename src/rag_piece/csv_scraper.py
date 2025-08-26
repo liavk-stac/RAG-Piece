@@ -69,6 +69,116 @@ class CSVWikiScraper:
             self.logger.error(f"Error scraping article {article_name} for CSV: {e}", exc_info=True)
             return [], {}
     
+    def extract_tables_in_memory(self, article_name: str) -> Tuple[List[pd.DataFrame], Dict[str, Any]]:
+        """
+        Extract tables from a wiki article and return them as DataFrames in memory.
+        This method does not create CSV files and is the preferred approach for processing.
+        
+        Args:
+            article_name: Name of the article to scrape
+            
+        Returns:
+            Tuple of (dataframes, metadata) where dataframes contains the extracted tables
+        """
+        try:
+            self.logger.info(f"Extracting tables in memory for: {article_name}")
+            
+            # Find sub-articles
+            sub_articles = self._find_sub_articles(article_name)
+            self.logger.info(f"Found {len(sub_articles)} sub-articles")
+            
+            # Get article content
+            article_content = self._get_article_content(article_name)
+            if not article_content:
+                self.logger.warning(f"No content found for article: {article_name}")
+                return [], {}
+            
+            # Extract tables from main article
+            tables = self._extract_tables(article_content)
+            self.logger.info(f"Found {len(tables)} total tables in {article_name}")
+            
+            dataframes = []
+            table_metadata = []
+            
+            # Process each table
+            for i, table in enumerate(tables, 1):
+                try:
+                    # Convert table to DataFrame
+                    df = self._table_to_dataframe(table)
+                    if df is not None and not df.empty:
+                        table_name = self._extract_table_name(table, i)
+                        
+                        # Create metadata for this table
+                        table_info = {
+                            'table_index': i,
+                            'table_name': table_name,
+                            'rows': len(df),
+                            'columns': len(df.columns),
+                            'column_names': df.columns.tolist(),
+                            'data_preview': df.head(3).to_dict('records') if len(df) > 0 else []
+                        }
+                        table_metadata.append(table_info)
+                        
+                        # Store DataFrame in memory for direct processing
+                        dataframes.append(df)
+                        self.logger.info(f"Extracted table {i}: {table_name} ({len(df)} rows, {len(df.columns)} columns)")
+                    
+                except Exception as e:
+                    self.logger.error(f"Error processing table {i}: {e}")
+                    continue
+            
+            # Process sub-articles
+            for sub_article in sub_articles:
+                try:
+                    sub_content = self._get_article_content(sub_article)
+                    if sub_content:
+                        sub_tables = self._extract_tables(sub_content)
+                        for i, table in enumerate(sub_tables, 1):
+                            try:
+                                df = self._table_to_dataframe(table)
+                                if df is not None and not df.empty:
+                                    table_name = self._extract_table_name(table, i)
+                                    
+                                    # Create metadata for sub-article table
+                                    table_info = {
+                                        'table_index': i,
+                                        'table_name': table_name,
+                                        'sub_article': sub_article,
+                                        'rows': len(df),
+                                        'columns': len(df.columns),
+                                        'column_names': df.columns.tolist(),
+                                        'data_preview': df.head(3).to_dict('records') if len(df) > 0 else []
+                                    }
+                                    table_metadata.append(table_info)
+                                    
+                                    # Store DataFrame in memory for direct processing
+                                    dataframes.append(df)
+                                    self.logger.info(f"Extracted sub-article table: {table_name} ({len(df)} rows, {len(df.columns)} columns)")
+                                
+                            except Exception as e:
+                                self.logger.error(f"Error processing sub-article table {i} from {sub_article}: {e}")
+                                continue
+                                
+                except Exception as e:
+                    self.logger.error(f"Error processing sub-article {sub_article}: {e}")
+                    continue
+            
+            # Create metadata
+            metadata = {
+                'article_name': article_name,
+                'tables_found': len(table_metadata),
+                'dataframes_extracted': len(dataframes),
+                'table_details': table_metadata,
+                'scraping_timestamp': datetime.now().isoformat()
+            }
+            
+            self.logger.info(f"Completed in-memory table extraction: {article_name} ({len(dataframes)} tables extracted)")
+            return dataframes, metadata
+            
+        except Exception as e:
+            self.logger.error(f"Error extracting tables for article {article_name}: {e}", exc_info=True)
+            return [], {}
+    
     def _create_csv_folder(self, article_name: str) -> Path:
         """Create CSV files folder for the article."""
         csv_folder = Path("csv_files") / slugify(article_name)
@@ -555,3 +665,103 @@ class CSVWikiScraper:
                 for table in tables
             ]
         }
+
+    def _get_article_content(self, article_name: str) -> Optional[str]:
+        """Get the HTML content of an article."""
+        try:
+            url = f"{self.base_url}/api.php"
+            params = {
+                'action': 'parse',
+                'page': article_name,
+                'format': 'json',
+                'prop': 'text'
+            }
+            
+            response = requests.get(url, params=params, timeout=30)
+            response.raise_for_status()
+            
+            data = response.json()
+            if 'parse' in data and 'text' in data['parse']:
+                return data['parse']['text']['*']
+            else:
+                self.logger.warning(f"No content found in API response for {article_name}")
+                return None
+                
+        except Exception as e:
+            self.logger.error(f"Error getting content for {article_name}: {e}")
+            return None
+    
+    def _extract_tables(self, html_content: str) -> List[BeautifulSoup]:
+        """Extract table elements from HTML content."""
+        soup = BeautifulSoup(html_content, 'html.parser')
+        tables = soup.find_all('table', class_='wikitable')
+        return tables
+    
+    def _table_to_dataframe(self, table: BeautifulSoup) -> Optional[pd.DataFrame]:
+        """Convert a BeautifulSoup table to a pandas DataFrame."""
+        try:
+            # Extract headers
+            headers = []
+            header_row = table.find('tr')
+            if header_row:
+                for th in header_row.find_all(['th', 'td']):
+                    header_text = th.get_text(strip=True)
+                    if header_text:
+                        headers.append(header_text)
+                    else:
+                        headers.append(f"Column_{len(headers)}")
+            
+            # Extract data rows
+            rows = []
+            for tr in table.find_all('tr')[1:]:  # Skip header row
+                row_data = []
+                for td in tr.find_all(['td', 'th']):
+                    cell_text = td.get_text(strip=True)
+                    row_data.append(cell_text)
+                if row_data:  # Only add non-empty rows
+                    rows.append(row_data)
+            
+            # Create DataFrame
+            if headers and rows:
+                # Ensure all rows have the same number of columns
+                max_cols = len(headers)
+                normalized_rows = []
+                for row in rows:
+                    if len(row) < max_cols:
+                        row.extend([''] * (max_cols - len(row)))
+                    elif len(row) > max_cols:
+                        row = row[:max_cols]
+                    normalized_rows.append(row)
+                
+                df = pd.DataFrame(normalized_rows, columns=headers)
+                return df
+            else:
+                return None
+                
+        except Exception as e:
+            self.logger.error(f"Error converting table to DataFrame: {e}")
+            return None
+    
+    def _extract_table_name(self, table: BeautifulSoup, index: int) -> str:
+        """Extract a meaningful name for the table."""
+        try:
+            # Try to find a caption
+            caption = table.find('caption')
+            if caption:
+                caption_text = caption.get_text(strip=True)
+                if caption_text:
+                    return caption_text
+            
+            # Try to find a preceding heading
+            prev_element = table.find_previous(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
+            if prev_element:
+                heading_text = prev_element.get_text(strip=True)
+                if heading_text:
+                    return heading_text
+            
+            # Fallback to generic name
+            return f"Table_{index}"
+            
+        except Exception as e:
+            self.logger.error(f"Error extracting table name: {e}")
+            return f"Table_{index}"
