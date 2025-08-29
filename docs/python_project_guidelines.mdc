@@ -1,0 +1,478 @@
+-----
+alwaysApply: true
+-----
+# Python Project Organization Guidelines
+
+## Project Structure
+
+### Standard Directory Layout
+```
+project_name/
+├── src/
+│   └── project_name/
+│       ├── __init__.py
+│       ├── core/
+│       │   ├── __init__.py
+│       │   └── main.py
+│       ├── utils/
+│       │   ├── __init__.py
+│       │   └── helpers.py
+│       ├── models/
+│       │   ├── __init__.py
+│       │   └── data_models.py
+│       ├── services/
+│       │   ├── __init__.py
+│       │   └── api_service.py
+│       └── config/
+│           ├── __init__.py
+│           └── settings.py
+├── tests/
+│   ├── __init__.py
+│   ├── test_core/
+│   ├── test_utils/
+│   ├── test_models/
+│   └── test_services/
+├── docs/
+│   ├── README.md
+│   ├── API.md
+│   └── CONTRIBUTING.md
+├── scripts/
+│   ├── setup.py
+│   └── deploy.py
+├── requirements.txt
+├── requirements-dev.txt
+├── setup.py
+├── pyproject.toml
+├── .env.example
+├── .gitignore
+├── README.md
+└── LICENSE
+```
+
+## Core Principles
+
+### 1. Separation of Concerns
+- **Core Logic**: Business logic and main functionality
+- **Utils**: Helper functions and utilities
+- **Models**: Data structures and models
+- **Services**: External integrations and API calls
+- **Config**: Configuration management
+
+### 2. Modular Design
+- Each module should have a single responsibility
+- Use `__init__.py` files to control module exports
+- Keep modules focused and cohesive
+- Avoid circular imports
+
+### 3. Package Structure Rules
+
+#### Module Organization
+```python
+# Good: Clear hierarchy
+src/myproject/
+├── core/
+│   ├── __init__.py
+│   ├── processor.py
+│   └── validator.py
+├── utils/
+│   ├── __init__.py
+│   ├── file_helpers.py
+│   └── date_utils.py
+
+# Avoid: Flat structure
+src/myproject/
+├── processor.py
+├── validator.py
+├── file_helpers.py
+└── date_utils.py
+```
+
+#### Import Structure
+```python
+# Good: Relative imports within package
+from .core.processor import DataProcessor
+from ..utils.file_helpers import read_file
+
+# Good: Absolute imports for external packages
+import pandas as pd
+from fastapi import FastAPI
+
+# Avoid: Deep relative imports
+from ....utils.file_helpers import read_file
+```
+
+## File Naming Conventions
+
+### Python Files
+- Use `snake_case` for all Python files
+- Be descriptive but concise
+- Examples: `data_processor.py`, `api_client.py`, `config_manager.py`
+
+### Directories
+- Use `snake_case` for directory names
+- Group related functionality
+- Examples: `data_models/`, `api_services/`, `test_utils/`
+
+## Code Organization Rules
+
+### 1. Class Structure
+```python
+# Good: Organized class structure
+class DataProcessor:
+    """Process and validate data."""
+    
+    def __init__(self, config: Config):
+        self.config = config
+        self._setup()
+    
+    def _setup(self):
+        """Initialize internal components."""
+        pass
+    
+    def process(self, data: List[Dict]) -> List[Dict]:
+        """Process the input data."""
+        pass
+    
+    def validate(self, data: Dict) -> bool:
+        """Validate input data."""
+        pass
+```
+
+### 2. Function Organization
+```python
+# Good: Logical function grouping
+class APIClient:
+    # Public methods first
+    def get_data(self, endpoint: str) -> Dict:
+        """Get data from API endpoint."""
+        pass
+    
+    def post_data(self, endpoint: str, data: Dict) -> Dict:
+        """Post data to API endpoint."""
+        pass
+    
+    # Private methods after
+    def _make_request(self, method: str, url: str, **kwargs) -> Response:
+        """Make HTTP request."""
+        pass
+    
+    def _handle_response(self, response: Response) -> Dict:
+        """Handle API response."""
+        pass
+```
+
+### 3. Import Organization
+```python
+# Standard library imports
+import os
+import sys
+from typing import List, Dict, Optional
+from pathlib import Path
+
+# Third-party imports
+import pandas as pd
+import requests
+from fastapi import FastAPI
+
+# Local imports
+from .core.processor import DataProcessor
+from .utils.helpers import format_data
+```
+
+## Configuration Management
+
+### Environment Variables
+```python
+# config/settings.py
+import os
+from typing import Optional
+
+class Settings:
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./app.db")
+    API_KEY: Optional[str] = os.getenv("API_KEY")
+    DEBUG: bool = os.getenv("DEBUG", "False").lower() == "true"
+    
+    class Config:
+        env_file = ".env"
+```
+
+### Configuration Usage
+```python
+# Good: Centralized configuration
+from .config.settings import Settings
+
+settings = Settings()
+
+class DatabaseService:
+    def __init__(self):
+        self.url = settings.DATABASE_URL
+```
+
+## Testing Structure
+
+### Test Organization
+```
+tests/
+├── __init__.py
+├── conftest.py
+├── test_core/
+│   ├── __init__.py
+│   ├── test_processor.py
+│   └── test_validator.py
+├── test_utils/
+│   ├── __init__.py
+│   └── test_helpers.py
+└── test_integration/
+    ├── __init__.py
+    └── test_api.py
+```
+
+### Test File Structure
+```python
+# tests/test_core/test_processor.py
+import pytest
+from src.myproject.core.processor import DataProcessor
+
+class TestDataProcessor:
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.processor = DataProcessor()
+    
+    def test_process_valid_data(self):
+        """Test processing valid data."""
+        data = [{"id": 1, "name": "test"}]
+        result = self.processor.process(data)
+        assert len(result) == 1
+    
+    def test_process_invalid_data(self):
+        """Test processing invalid data."""
+        data = []
+        result = self.processor.process(data)
+        assert result == []
+```
+
+## Dependency Management
+
+### Requirements Files
+```
+# requirements.txt - Production dependencies
+fastapi==0.104.1
+pydantic==2.5.0
+sqlalchemy==2.0.23
+
+# requirements-dev.txt - Development dependencies
+pytest==7.4.3
+black==23.11.0
+flake8==6.1.0
+mypy==1.7.1
+```
+
+### Setup Configuration
+```python
+# setup.py
+from setuptools import setup, find_packages
+
+setup(
+    name="myproject",
+    version="0.1.0",
+    packages=find_packages(where="src"),
+    package_dir={"": "src"},
+    install_requires=[
+        "fastapi>=0.104.0",
+        "pydantic>=2.5.0",
+    ],
+    extras_require={
+        "dev": [
+            "pytest>=7.4.0",
+            "black>=23.11.0",
+            "flake8>=6.1.0",
+        ]
+    }
+)
+```
+
+## Documentation Standards
+
+### Module Documentation
+```python
+"""
+Data processing module for the application.
+
+This module provides classes and functions for processing and validating
+data from various sources. It includes data transformation utilities
+and validation rules.
+
+Classes:
+    DataProcessor: Main class for processing data
+    DataValidator: Class for validating data formats
+
+Functions:
+    format_data: Format data for output
+    validate_schema: Validate data against schema
+"""
+
+# ... rest of module code
+```
+
+### Function Documentation
+```python
+def process_data(data: List[Dict], config: Config) -> List[Dict]:
+    """
+    Process a list of data dictionaries according to configuration.
+    
+    Args:
+        data: List of dictionaries containing raw data
+        config: Configuration object with processing rules
+    
+    Returns:
+        List of processed data dictionaries
+        
+    Raises:
+        ValueError: If data format is invalid
+        ConfigError: If configuration is malformed
+        
+    Example:
+        >>> data = [{"id": 1, "value": "test"}]
+        >>> config = Config(transform=True)
+        >>> result = process_data(data, config)
+        >>> print(result)
+        [{"id": 1, "value": "TEST"}]
+    """
+    pass
+```
+
+## Best Practices
+
+### 1. Error Handling
+```python
+# Good: Specific exception handling
+try:
+    result = process_data(data)
+except ValueError as e:
+    logger.error(f"Invalid data format: {e}")
+    raise
+except ConfigError as e:
+    logger.error(f"Configuration error: {e}")
+    raise
+```
+
+### 2. Logging
+```python
+import logging
+
+logger = logging.getLogger(__name__)
+
+class DataProcessor:
+    def process(self, data: List[Dict]) -> List[Dict]:
+        logger.info(f"Processing {len(data)} records")
+        try:
+            result = self._process_items(data)
+            logger.info(f"Successfully processed {len(result)} records")
+            return result
+        except Exception as e:
+            logger.error(f"Processing failed: {e}")
+            raise
+```
+
+### 3. Type Hints
+```python
+from typing import List, Dict, Optional, Union
+
+def process_data(
+    data: List[Dict[str, Union[str, int, float]]],
+    config: Optional[Config] = None
+) -> List[Dict[str, Union[str, int, float]]]:
+    """Process data with type hints."""
+    pass
+```
+
+## Project Initialization Checklist
+
+### 1. Create Basic Structure
+- [ ] Create main project directory
+- [ ] Set up `src/` directory with package structure
+- [ ] Create `tests/` directory
+- [ ] Add `docs/` directory
+- [ ] Create `scripts/` directory
+
+### 2. Configuration Files
+- [ ] Create `requirements.txt`
+- [ ] Create `requirements-dev.txt`
+- [ ] Add `setup.py` or `pyproject.toml`
+- [ ] Create `.env.example`
+- [ ] Add `.gitignore`
+
+### 3. Documentation
+- [ ] Write `README.md`
+- [ ] Add `LICENSE` file
+- [ ] Create API documentation
+- [ ] Add contribution guidelines
+
+### 4. Development Setup
+- [ ] Set up virtual environment
+- [ ] Install development dependencies
+- [ ] Configure linting tools
+- [ ] Set up pre-commit hooks
+
+## Common Anti-patterns to Avoid
+
+### 1. Monolithic Files
+```python
+# Avoid: Everything in one file
+# main.py - 1000+ lines with everything mixed together
+
+# Prefer: Modular structure
+# core/processor.py, utils/helpers.py, etc.
+```
+
+### 2. Circular Imports
+```python
+# Avoid: Circular dependencies
+# module_a.py imports module_b.py
+# module_b.py imports module_a.py
+
+# Prefer: Clear dependency hierarchy
+# core/ depends on utils/
+# services/ depends on core/ and utils/
+```
+
+### 3. Global State
+```python
+# Avoid: Global variables
+global_config = {}
+global_database = None
+
+# Prefer: Dependency injection
+class Service:
+    def __init__(self, config: Config, db: Database):
+        self.config = config
+        self.db = db
+```
+
+### 4. Hardcoded Values
+```python
+# Avoid: Magic numbers and strings
+def process_data(data):
+    if len(data) > 1000:  # Magic number
+        return data[:1000]
+
+# Prefer: Configuration
+MAX_RECORDS = 1000
+def process_data(data):
+    if len(data) > MAX_RECORDS:
+        return data[:MAX_RECORDS]
+```
+
+## Summary
+
+Following these guidelines will help create:
+- **Maintainable** code that's easy to understand and modify
+- **Testable** code with clear separation of concerns
+- **Scalable** projects that can grow without becoming unwieldy
+- **Collaborative** codebases that multiple developers can work on effectively
+
+Remember: The goal is to create code that is not just functional, but also readable, maintainable, and professional.
+description:
+globs:
+alwaysApply: false
+---

@@ -1,0 +1,605 @@
+# One Piece Chatbot Architecture & Implementation Plan
+
+## 🎯 **Project Overview**
+
+### **Project Purpose**
+A comprehensive, multimodal One Piece chatbot that leverages the existing RAG database to provide intelligent, context-aware responses to both text and image queries. This is a final course project focusing on impressive functionality and deep One Piece knowledge integration.
+
+### **Core Capabilities**
+- **Multimodal Input**: Accepts both text queries and image uploads
+- **RAG Integration**: Deep integration with existing One Piece RAG database
+- **Intelligent Analysis**: Comprehensive image analysis using detailed descriptions
+- **Context Awareness**: Session-based conversation memory and context
+- **Deep Knowledge**: Maximum depth analysis using all available database information
+
+---
+
+## 🏗️ **System Architecture Overview**
+
+### **High-Level Component Structure**
+```
+User Interface (Web UI) → Chatbot Orchestrator → Agent Pipeline → Tools & RAG → Response Generation
+         ↓                        ↓                ↓              ↓              ↓
+   Input Processing         Memory Management   Agent Routing   Database      Formatted Output
+   (Text + Images)         (Session + Context) (Smart Logic)   Integration   (Rich Responses)
+```
+
+### **Core Architecture Principles**
+1. **Modularity**: Each component is independent and replaceable
+2. **Scalability**: Easy to add new agents, tools, or capabilities
+3. **Reliability**: LLM-first approach with robust error handling (no rule-based fallbacks)
+4. **Performance**: Optimized for sub-2-minute response times
+5. **One Piece Specificity**: Deep integration with RAG database and lore
+
+---
+
+## 📁 **File Structure & Organization**
+
+### **Complete Directory Layout**
+```
+src/chatbot/
+├── __init__.py                    # Package initialization and exports
+├── main.py                        # Main chatbot entry point and web server
+├── config.py                      # Centralized chatbot configuration
+├── core/                          # Core chatbot components
+│   ├── __init__.py
+│   ├── chatbot.py                 # Main chatbot orchestrator
+│   ├── memory.py                  # Conversation memory management
+│   ├── session.py                 # User session handling
+│   ├── pipeline.py                # Agent pipeline orchestration
+│   └── orchestrator.py            # High-level workflow coordination
+├── agents/                        # LangChain agents
+│   ├── __init__.py
+│   ├── base_agent.py              # Base agent interface and common functionality
+│   ├── router_agent.py            # Input routing and agent selection
+│   ├── search_agent.py            # RAG database search and retrieval
+│   ├── reasoning_agent.py         # Logical reasoning and information synthesis
+│   ├── image_analysis_agent.py    # Image understanding and analysis
+│   ├── response_agent.py          # Final response generation and formatting
+│   └── timeline_agent.py          # One Piece timeline and chronology
+├── tools/                         # LangChain tools
+│   ├── __init__.py
+│   ├── rag_search_tool.py         # RAG database search interface
+│   ├── image_retrieval_tool.py    # Extract images from RAG database
+│   ├── image_description_tool.py  # Convert images to detailed text
+│   ├── character_lookup_tool.py   # Character information and relationships
+│   ├── location_lookup_tool.py    # Location and world information
+│   ├── timeline_tool.py           # One Piece timeline and events
+│   ├── relationship_tool.py       # Character and world relationships
+│   └── world_info_tool.py         # General One Piece world knowledge
+├── memory/                        # Memory systems
+│   ├── __init__.py
+│   ├── conversation_memory.py     # Chat history and context
+│   ├── session_memory.py          # Session-specific context and state
+│   ├── user_context_memory.py     # User preferences and session goals
+│   └── domain_memory.py           # One Piece specific knowledge rules
+├── multimodal/                    # Multimodal processing
+│   ├── __init__.py
+│   ├── image_processor.py         # Image preprocessing and validation
+│   ├── vision_agent.py            # Vision-language model integration
+│   ├── text_processor.py          # Text preprocessing and enhancement
+│   ├── fusion.py                  # Multimodal fusion and coordination
+│   └── description_generator.py   # Detailed image description generation
+├── pipeline/                      # Agent pipeline logic
+│   ├── __init__.py
+│   ├── orchestrator.py            # Pipeline flow control and coordination
+│   ├── routing.py                 # Intelligent agent routing logic
+│   ├── validation.py              # Response validation and quality control
+│   └── workflow.py                # Workflow definition and execution
+├── utils/                         # Utilities and helpers
+│   ├── __init__.py
+│   ├── logging.py                 # Chatbot-specific logging setup
+│   ├── validation.py              # Input/output validation utilities
+│   ├── formatting.py              # Response formatting and presentation
+│   ├── error_handling.py          # Error handling and user communication
+│   ├── one_piece_utils.py         # One Piece specific utility functions
+│   └── performance.py             # Performance monitoring and optimization
+├── interfaces/                    # User interfaces
+│   ├── __init__.py
+│   ├── web_interface.py           # Flask-based web interface implementation
+│   ├── api.py                     # API endpoints for future expansion
+│   └── cli.py                     # Command-line interface (optional)
+└── tests/                         # Testing framework
+    ├── __init__.py
+    ├── test_agents.py             # Agent functionality tests
+    ├── test_tools.py              # Tool integration tests
+    ├── test_pipeline.py           # Pipeline workflow tests
+    ├── test_memory.py             # Memory system tests
+    └── test_multimodal.py         # Multimodal processing tests
+```
+
+---
+
+## 🔄 **Core Workflow & Pipeline Design**
+
+### **Main Conversation Flow**
+```
+1. User Input (Text + Optional Image)
+   ↓
+2. Input Processing & Validation
+   ↓
+3. Intent Detection & Routing
+   ↓
+4. Agent Pipeline Execution
+   ↓
+5. Tool Integration & RAG Search
+   ↓
+6. Response Generation & Formatting
+   ↓
+7. Memory Update & Context Preservation
+   ↓
+8. Output Delivery to User
+```
+
+### **Detailed Pipeline Stages**
+
+#### **Stage 1: Input Processing & Validation**
+- **Text Processing**: Clean, normalize, and enhance text input
+- **Image Processing**: Validate, resize, and prepare images for analysis
+- **Input Validation**: Ensure proper format and content quality
+- **Intent Classification**: Determine query type and complexity
+
+#### **Stage 2: Intent Detection & Routing**
+- **Query Analysis**: Identify primary intent (search, analysis, conversation)
+- **Modality Detection**: Determine if text-only, image-only, or multimodal
+- **Complexity Assessment**: Evaluate query complexity and required agents
+- **Route Selection**: Choose appropriate agent pipeline
+
+#### **Stage 3: Agent Pipeline Execution**
+- **Agent Orchestration**: Coordinate multiple agents for complex queries
+- **Sequential Processing**: Execute agents in logical order
+- **Context Passing**: Maintain context between agent executions
+- **Result Aggregation**: Collect and combine agent outputs
+
+#### **Stage 4: Tool Integration & RAG Search**
+- **Tool Selection**: Choose appropriate tools based on query needs
+- **RAG Integration**: Leverage existing database search capabilities
+- **Context Enhancement**: Enrich search queries with conversation context
+- **Result Retrieval**: Gather comprehensive information from database
+
+#### **Stage 5: Response Generation & Formatting**
+- **Information Synthesis**: Combine multiple information sources
+- **Response Structuring**: Organize information logically
+- **One Piece Context**: Ensure lore accuracy and relevance
+- **User Experience**: Format for optimal readability and engagement
+
+#### **Stage 6: Memory Update & Context Preservation**
+- **Conversation History**: Update session memory with new interaction
+- **Context Preservation**: Maintain relevant context for future queries
+- **Session State**: Track conversation goals and user preferences
+- **Memory Optimization**: Manage memory size and relevance
+
+---
+
+## 🤖 **Agent Architecture & Responsibilities**
+
+### **Agent Hierarchy & Flow**
+```
+Router Agent → [Search Agent] → [Reasoning Agent] → [Image Analysis Agent] → Response Agent
+     ↓              ↓                ↓                    ↓                ↓
+Input Routing   Information      Logical           Visual Context      Final Output
+& Intent       Retrieval        Reasoning         & Analysis         Generation
+Detection      & Context        & Synthesis       & Integration      & Formatting
+```
+
+### **Individual Agent Specifications**
+
+#### **1. Router Agent**
+- **Purpose**: Input analysis, intent detection, and agent routing
+- **Responsibilities**:
+  - Analyze input modality (text, image, or both)
+  - Determine query intent and complexity
+  - Select appropriate agent pipeline
+  - Handle input validation and preprocessing
+- **Input**: Raw user input (text + optional image). Accepts image-only inputs.
+- **Output**: Routing decision and agent pipeline specification
+- **Tools**: Input validation, intent classification
+
+#### **2. Search Agent**
+- **Purpose**: RAG database search and information retrieval via proven SearchEngine
+- **Responsibilities**:
+  - Generate intelligent search queries using LLM enhancement
+  - Execute hybrid BM25 + FAISS searches via SearchEngine.search()
+  - Retrieve relevant One Piece information with rich metadata
+  - Contextualize search results and provide confidence scoring
+  - Use LLM-based strategy detection for optimal search approach
+- **Input**: Processed query and conversation context
+- **Output**: Retrieved information, search context, and performance metrics
+- **Tools**: Direct SearchEngine integration, LLM-based query enhancement
+- **Integration**: Leverages proven SearchEngine class from RAG project
+
+#### **3. Reasoning Agent**
+- **Purpose**: Logical reasoning and information synthesis
+- **Responsibilities**:
+  - Connect retrieved information
+  - Identify relationships and patterns
+  - Synthesize complex information
+  - Handle multi-step reasoning
+- **Input**: Retrieved information and query context
+- **Output**: Synthesized information and logical connections
+- **Tools**: Relationship tool, timeline tool, world info tool
+
+#### **4. Image Analysis Agent**
+- **Purpose**: Image understanding and visual context analysis
+- **Responsibilities**:
+  - Generate detailed image descriptions
+  - Cross-reference visual content with database
+  - Analyze image context and relationships
+  - Integrate visual and textual information
+- **Input**: Uploaded image and conversation context
+- **Output**: Comprehensive image analysis and context
+- **Output Structure (as implemented)**:
+  - `description` (string): LLM-generated image description
+  - `image_analysis` (object): technical properties and visual features (format, size, width, height, aspect_ratio, quality, colors, etc.)
+  - `rag_integration` (object): RAG search info (e.g., `search_query`, `results`, `integration_success`)
+  - `confidence_score` (float): overall analysis confidence
+  - `metadata` (object): processing metadata (`image_size`, `processing_method`, `description_length`, `rag_results_count`)
+- **Tools**: Image description tool, image retrieval tool, RAG search
+
+#### **5. Response Agent**
+- **Purpose**: Final response generation and formatting
+- **Responsibilities**:
+  - Synthesize all agent outputs
+  - Generate coherent, comprehensive responses
+  - Ensure One Piece lore accuracy
+  - Format responses for optimal user experience
+- **Input**: All agent outputs and conversation context
+- **Output**: Final formatted response
+- **Tools**: Response formatting, validation
+
+#### **6. Timeline Agent**
+- **Purpose**: One Piece timeline and chronology understanding
+- **Responsibilities**:
+  - Understand temporal relationships
+  - Place events in chronological context
+  - Handle timeline-based queries
+  - Integrate historical context
+- **Input**: Query context and retrieved information
+- **Output**: Timeline context and chronological relationships
+- **Tools**: Timeline tool, world info tool
+
+---
+
+## 🛠️ **Tool Specifications & Integration**
+
+### **Core Tool Architecture**
+Each tool follows LangChain tool patterns and integrates seamlessly with the agent pipeline.
+
+### **Detailed Tool Specifications**
+
+#### **1. RAG Search Tool**
+- **Purpose**: Primary interface to existing RAG database via SearchEngine
+- **Functionality**:
+  - Execute hybrid BM25 + FAISS searches via SearchEngine.search()
+  - Leverage proven search infrastructure with intelligent result fusion
+  - Return ranked search results with comprehensive metadata
+  - Provide search context, confidence scores, and performance metrics
+  - Support LLM-based query enhancement and strategy detection
+- **Input**: Search query and parameters
+- **Output**: Ranked search results with rich metadata and confidence scoring
+- **Integration**: Direct SearchEngine integration (no custom RAG logic needed)
+
+#### **2. Image Retrieval Tool**
+- **Purpose**: Extract and retrieve images from RAG database
+- **Functionality**:
+  - Search through stored images in `data/images/[article_name]/`
+  - Find similar images based on content/context
+  - Retrieve associated metadata and article information
+  - Support image similarity search
+- **Input**: Image description or search criteria
+- **Output**: Relevant images and metadata
+- **Integration**: File system access to image storage
+
+#### **3. Image Description Tool**
+- **Purpose**: Convert images to highly detailed text descriptions
+- **Functionality**:
+  - Generate comprehensive image descriptions
+  - Capture characters, locations, objects, and actions
+  - Identify One Piece specific elements
+  - Provide detailed visual context
+- **Input**: Image file or image data
+- **Output**: Detailed text description
+- **Technology**: Vision-Language Model integration
+
+#### **4. Character Lookup Tool**
+- **Purpose**: Character information and relationship lookup
+- **Functionality**:
+  - Retrieve character details and backstory
+  - Identify character relationships and connections
+  - Provide character development information
+  - Handle character name variations
+- **Input**: Character identifier or description
+- **Output**: Comprehensive character information
+- **Integration**: RAG database search with character focus
+
+#### **5. Location Lookup Tool**
+- **Purpose**: Location and world information lookup
+- **Functionality**:
+  - Retrieve location details and history
+  - Provide geographical and cultural context
+  - Handle location relationships and connections
+  - Include location-specific events and characters
+- **Input**: Location identifier or description
+- **Output**: Comprehensive location information
+- **Integration**: RAG database search with location focus
+
+#### **6. Timeline Tool**
+- **Purpose**: One Piece timeline and chronology
+- **Functionality**:
+  - Understand temporal relationships
+  - Place events in chronological context
+  - Handle timeline-based queries
+  - Provide historical context
+- **Input**: Event or time-based query
+- **Output**: Timeline context and chronological information
+- **Integration**: RAG database search with temporal focus
+
+#### **7. Relationship Tool**
+- **Purpose**: Character and world relationship mapping
+- **Functionality**:
+  - Identify character relationships
+  - Map world connections and influences
+  - Handle complex relationship networks
+  - Provide relationship context
+- **Input**: Relationship query or context
+- **Output**: Relationship information and connections
+- **Integration**: RAG database search with relationship focus
+
+#### **8. World Info Tool**
+- **Purpose**: General One Piece world knowledge
+- **Functionality**:
+  - Provide world-building information
+  - Handle general lore questions
+  - Supply context for specific topics
+  - Offer background information
+- **Input**: General knowledge query
+- **Output**: World information and context
+- **Integration**: RAG database search with general focus
+
+---
+
+## 🧠 **Memory System Architecture**
+
+### **Multi-Layer Memory Design**
+```
+Session Memory (Current Conversation)
+         ↓
+   Context Memory (Recent History)
+         ↓
+   Domain Memory (One Piece Rules)
+         ↓
+   Persistent Memory (User Preferences)
+```
+
+### **Memory Component Specifications**
+
+#### **1. Conversation Memory**
+- **Purpose**: Maintain conversation history and context
+- **Storage**: Recent conversation turns (configurable window)
+- **Content**: User inputs, system responses, conversation flow
+- **Management**: Automatic cleanup and relevance filtering
+- **Integration**: LangChain conversation memory chains
+
+#### **2. Session Memory**
+- **Purpose**: Track session-specific context and state
+- **Storage**: Current session information and goals
+- **Content**: Session goals, user preferences, current context
+- **Management**: Session lifecycle and state transitions
+- **Integration**: Custom session management system
+
+#### **3. User Context Memory**
+- **Purpose**: Maintain user-specific context and preferences
+- **Storage**: User preferences and interaction patterns
+- **Content**: Preferred topics, interaction style, knowledge level
+- **Management**: User profile updates and preference learning
+- **Integration**: User context tracking and adaptation
+
+#### **4. Domain Memory**
+- **Purpose**: One Piece specific knowledge and rules
+- **Storage**: Lore rules, world constraints, canonical information
+- **Content**: World rules, character constraints, timeline rules
+- **Management**: Static knowledge base with validation
+- **Integration**: Domain knowledge validation system
+
+---
+
+## 🖼️ **Multimodal Processing Architecture**
+
+### **Image Processing Pipeline**
+```
+Image Upload → Validation → Preprocessing → Description Generation → RAG Integration → Analysis
+     ↓            ↓            ↓              ↓                ↓            ↓
+File Input   Format Check   Resize/Format   Vision Model    Search Query   Contextual
+& Storage    & Quality     & Optimization   Processing      Generation     Response
+                                     (base64-encoded image bytes)
+```
+
+### **Text Processing Pipeline**
+```
+Text Input → Validation → Enhancement → Intent Analysis → Query Optimization → RAG Integration
+    ↓          ↓            ↓            ↓              ↓                ↓
+Raw Text   Format Check   Context      Intent         Query            Search
+Input      & Cleaning     Addition     Detection      Enhancement     Execution
+```
+
+### **Multimodal Fusion Strategy**
+- **Parallel Processing**: Process text and images simultaneously when possible
+- **Context Integration**: Combine visual and textual context for comprehensive understanding
+- **Cross-Reference**: Use visual information to enhance text queries and vice versa
+- **Unified Response**: Generate responses that incorporate both modalities
+
+---
+
+## 🔧 **Configuration & Customization**
+
+### **Configuration Categories**
+```
+CHATBOT_CONFIG/
+├── Agent Settings
+│   ├── Agent timeouts and retry limits
+│   ├── Pipeline execution parameters
+│   └── Agent selection thresholds
+├── Memory Settings
+│   ├── Conversation memory window size
+│   ├── Session timeout settings
+│   └── Memory cleanup policies
+├── Tool Settings
+│   ├── RAG search parameters
+│   ├── Image processing settings
+│   └── Tool execution limits
+├── Performance Settings
+│   ├── Response time targets
+│   ├── Caching policies
+│   └── Resource allocation
+└── One Piece Settings
+    ├── Lore validation rules
+    ├── Canonical information sources
+    └── World knowledge constraints
+```
+
+### **Key Configuration Parameters**
+- **Response Time Target**: 2 minutes maximum
+- **Memory Window Size**: Configurable conversation history
+- **Image Quality Thresholds**: Minimum image requirements
+- **Search Result Limits**: Maximum results per search
+- **Agent Execution Timeouts**: Individual agent time limits
+
+---
+
+## 🚀 **Implementation Phases**
+
+### **Phase 1: Core Infrastructure**
+1. **Project Setup**: Directory structure and basic configuration
+2. **Core Components**: Basic chatbot orchestrator and memory system
+3. **Basic Pipeline**: Simple agent pipeline without complex routing
+4. **RAG Integration**: Basic integration with existing database
+
+### **Phase 2: Agent Development**
+1. **Base Agent Framework**: Common agent functionality and interfaces
+2. **Individual Agents**: Implement each agent with basic functionality
+3. **Agent Communication**: Inter-agent communication and data flow
+4. **Basic Routing**: Simple agent selection and routing logic
+
+### **Phase 3: Tool Integration** ✅ **COMPLETED**
+1. **Tool Framework**: LangChain tool integration and management
+2. **RAG Tools**: Database search and information retrieval tools via SearchEngine ✅
+3. **Image Tools**: Image processing and analysis tools
+4. **Specialized Tools**: Character, location, and relationship tools
+5. **SearchEngine Integration**: Direct integration with proven RAG search infrastructure ✅
+
+### **Phase 4: Multimodal Processing**
+1. **Image Processing**: Image validation, preprocessing, and storage
+2. **Vision Integration**: Vision-language model integration
+3. **Description Generation**: Detailed image description generation
+4. **Multimodal Fusion**: Text and image context integration
+
+### **Phase 5: Advanced Features**
+1. **Intelligent Routing**: Advanced agent selection and pipeline optimization
+2. **Memory Enhancement**: Advanced memory management and context preservation
+3. **Response Optimization**: Advanced response generation and formatting
+4. **Performance Optimization**: Response time optimization and caching
+
+### **Phase 6: Testing & Refinement**
+1. **Unit Testing**: Individual component testing
+2. **Integration Testing**: End-to-end pipeline testing
+3. **Performance Testing**: Response time and resource usage testing
+4. **User Experience Testing**: Interface and interaction testing
+
+---
+
+## 🧪 **Testing Strategy**
+
+### **Testing Categories**
+1. **Unit Tests**: Individual component functionality
+2. **Integration Tests**: Component interaction and data flow
+3. **Pipeline Tests**: End-to-end workflow validation
+4. **Performance Tests**: Response time and resource usage
+5. **User Experience Tests**: Interface usability and interaction
+
+### **Test Coverage Goals**
+- **Code Coverage**: 90%+ for critical components
+- **Pipeline Coverage**: 100% for main workflows
+- **Error Handling**: Comprehensive error scenario coverage
+- **Performance Validation**: Response time and resource usage validation
+
+---
+
+## 🔮 **Future Enhancements & Extensibility**
+
+### **Potential Future Features**
+1. **Advanced Vision Models**: Integration with cutting-edge vision models
+2. **Voice Interface**: Speech-to-text and text-to-speech capabilities
+3. **Advanced Memory**: Long-term memory and learning capabilities
+4. **Multi-User Support**: Concurrent user handling and user management
+5. **Advanced Analytics**: Usage analytics and performance insights
+6. **API Integration**: External API integration for enhanced functionality
+7. **Mobile Interface**: Mobile-optimized web interface
+8. **Offline Capabilities**: Local processing for privacy and performance
+
+### **Extensibility Points**
+1. **New Agents**: Easy addition of new specialized agents
+2. **New Tools**: Simple integration of new information sources
+3. **New Modalities**: Support for additional input/output types
+4. **Custom Pipelines**: User-defined agent execution workflows
+5. **Plugin System**: Third-party plugin and extension support
+
+---
+
+## 📋 **Success Criteria & Validation**
+
+### **Functional Requirements**
+- ✅ Accepts both text and image inputs
+- ✅ Provides comprehensive, accurate One Piece information
+- ✅ Maintains conversation context and memory
+- ✅ Generates detailed image analysis
+- ✅ Integrates seamlessly with existing RAG database
+- ✅ Responds within 2-minute target timeframe
+
+### **Quality Requirements**
+- ✅ Accurate One Piece lore and information
+- ✅ Comprehensive image analysis and description
+- ✅ Intelligent query understanding and routing
+- ✅ Robust error handling with LLM-first approach
+- ✅ Smooth user experience and interface
+- ✅ Reliable performance and stability
+
+### **Technical Requirements**
+- ✅ Modular, maintainable code architecture
+- ✅ Comprehensive testing and validation
+- ✅ Efficient resource usage and performance
+- ✅ Scalable and extensible design
+- ✅ Clean integration with existing systems
+- ✅ Professional code quality and documentation
+
+---
+
+## 🎯 **Project Deliverables**
+
+### **Core System**
+1. **Complete Chatbot Pipeline**: Full agent pipeline with all components
+2. **Multimodal Processing**: Text and image input handling
+3. **RAG Integration**: Seamless database integration
+4. **Memory System**: Session-based conversation memory
+5. **Web Interface**: Basic but functional web UI
+
+### **Documentation**
+1. **Architecture Documentation**: Complete system architecture
+2. **Implementation Guide**: Step-by-step implementation details
+3. **User Manual**: System usage and interaction guide
+4. **API Documentation**: Tool and agent interface documentation
+5. **Testing Guide**: Testing procedures and validation
+
+### **Quality Assurance**
+1. **Test Suite**: Comprehensive testing framework
+2. **Performance Validation**: Response time and resource usage validation
+3. **Error Handling**: Robust error handling and recovery
+4. **User Experience**: Smooth and intuitive interaction
+5. **Code Quality**: Professional, maintainable code
+
+---
+
+This comprehensive plan provides a solid foundation for implementing an impressive, feature-rich One Piece chatbot that leverages your existing RAG infrastructure while providing advanced multimodal capabilities and intelligent conversation management.
+description:
+globs:
+alwaysApply: false
+---

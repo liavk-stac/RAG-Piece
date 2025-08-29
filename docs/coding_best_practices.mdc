@@ -1,0 +1,590 @@
+-----
+alwaysApply: true
+-----
+# Coding Best Practices & Rules
+
+## Core Principles
+
+### 1. Comprehensive Logging
+**Rule: Always implement comprehensive logging for all operations**
+
+#### Logging Structure
+```python
+import logging
+from typing import Optional, Dict, Any
+from datetime import datetime
+
+# Configure logging at module level
+logger = logging.getLogger(__name__)
+
+class DataProcessor:
+    def __init__(self, config: Dict[str, Any]):
+        self.config = config
+        logger.info(f"Initializing DataProcessor with config: {config}")
+    
+    def process_data(self, data: List[Dict]) -> List[Dict]:
+        """Process data with comprehensive logging."""
+        logger.info(f"Starting data processing for {len(data)} records")
+        
+        try:
+            # Log input validation
+            logger.debug(f"Validating input data structure")
+            validated_data = self._validate_data(data)
+            logger.debug(f"Data validation completed, {len(validated_data)} valid records")
+            
+            # Log processing steps
+            logger.info("Processing data records")
+            processed_data = []
+            for i, record in enumerate(validated_data):
+                logger.debug(f"Processing record {i+1}/{len(validated_data)}")
+                processed_record = self._process_record(record)
+                processed_data.append(processed_record)
+            
+            logger.info(f"Data processing completed successfully. Processed {len(processed_data)} records")
+            return processed_data
+            
+        except Exception as e:
+            logger.error(f"Data processing failed: {str(e)}", exc_info=True)
+            raise
+```
+
+#### Logging Levels Usage
+```python
+# CRITICAL: System-breaking errors
+logger.critical("Database connection lost, system shutting down")
+
+# ERROR: Operation failures
+logger.error("Failed to process user request", exc_info=True)
+
+# WARNING: Potential issues
+logger.warning("High memory usage detected: 85%")
+
+# INFO: General flow information
+logger.info("User authentication successful")
+
+# DEBUG: Detailed debugging information
+logger.debug("Processing record ID: 12345, type: user_data")
+```
+
+### 2. No Error Bypassing
+**Rule: Never silently ignore or bypass errors**
+
+#### ❌ Bad: Silent Error Handling
+```python
+# NEVER DO THIS
+def process_file(filename: str) -> List[str]:
+    try:
+        with open(filename, 'r') as f:
+            return f.readlines()
+    except FileNotFoundError:
+        return []  # Silent failure - BAD!
+    except Exception:
+        pass  # Ignoring all errors - BAD!
+```
+
+#### ✅ Good: Explicit Error Handling
+```python
+# ALWAYS DO THIS
+def process_file(filename: str) -> List[str]:
+    logger.info(f"Attempting to process file: {filename}")
+    
+    try:
+        with open(filename, 'r') as f:
+            lines = f.readlines()
+            logger.info(f"Successfully read {len(lines)} lines from {filename}")
+            return lines
+            
+    except FileNotFoundError as e:
+        logger.error(f"File not found: {filename}")
+        raise FileNotFoundError(f"Required file '{filename}' not found") from e
+        
+    except PermissionError as e:
+        logger.error(f"Permission denied accessing file: {filename}")
+        raise PermissionError(f"Cannot access file '{filename}': permission denied") from e
+        
+    except Exception as e:
+        logger.error(f"Unexpected error reading file {filename}: {str(e)}", exc_info=True)
+        raise RuntimeError(f"Failed to read file '{filename}': {str(e)}") from e
+```
+
+### 3. Graceful Error Handling
+**Rule: Handle errors gracefully with proper recovery mechanisms**
+
+#### Graceful Degradation
+```python
+class APIService:
+    def __init__(self, fallback_service: Optional['APIService'] = None):
+        self.fallback_service = fallback_service
+        logger.info("APIService initialized with fallback service")
+    
+    def fetch_data(self, endpoint: str) -> Dict[str, Any]:
+        """Fetch data with graceful fallback."""
+        logger.info(f"Fetching data from endpoint: {endpoint}")
+        
+        try:
+            response = self._make_request(endpoint)
+            logger.info(f"Successfully fetched data from {endpoint}")
+            return response
+            
+        except ConnectionError as e:
+            logger.warning(f"Connection failed for {endpoint}: {str(e)}")
+            return self._handle_connection_failure(endpoint)
+            
+        except TimeoutError as e:
+            logger.warning(f"Request timeout for {endpoint}: {str(e)}")
+            return self._handle_timeout(endpoint)
+            
+        except Exception as e:
+            logger.error(f"Unexpected error fetching from {endpoint}: {str(e)}", exc_info=True)
+            return self._handle_unexpected_error(endpoint, e)
+    
+    def _handle_connection_failure(self, endpoint: str) -> Dict[str, Any]:
+        """Handle connection failures gracefully."""
+        if self.fallback_service:
+            logger.info(f"Attempting fallback service for {endpoint}")
+            return self.fallback_service.fetch_data(endpoint)
+        else:
+            logger.error(f"No fallback available for {endpoint}")
+            return {"error": "Service unavailable", "status": "degraded"}
+```
+
+#### Retry Mechanisms
+```python
+import time
+from functools import wraps
+from typing import Callable, Any
+
+def retry_with_backoff(max_retries: int = 3, base_delay: float = 1.0):
+    """Retry decorator with exponential backoff."""
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        def wrapper(*args, **kwargs) -> Any:
+            last_exception = None
+            
+            for attempt in range(max_retries + 1):
+                try:
+                    logger.debug(f"Attempt {attempt + 1}/{max_retries + 1} for {func.__name__}")
+                    return func(*args, **kwargs)
+                    
+                except Exception as e:
+                    last_exception = e
+                    if attempt < max_retries:
+                        delay = base_delay * (2 ** attempt)
+                        logger.warning(f"Attempt {attempt + 1} failed: {str(e)}. Retrying in {delay}s")
+                        time.sleep(delay)
+                    else:
+                        logger.error(f"All {max_retries + 1} attempts failed for {func.__name__}")
+                        raise last_exception
+            
+            return None
+        return wrapper
+    return decorator
+
+# Usage
+@retry_with_backoff(max_retries=3, base_delay=1.0)
+def fetch_api_data(endpoint: str) -> Dict[str, Any]:
+    """Fetch API data with automatic retry."""
+    # Implementation here
+    pass
+```
+
+### 4. Context7 MCP Integration
+**Rule: Use Context7 MCP to resolve external library errors when available**
+
+#### Library Documentation Resolution
+```python
+from typing import Optional, Dict, Any
+import subprocess
+import sys
+
+class LibraryErrorResolver:
+    """Resolve library-related errors using Context7 MCP."""
+    
+    def __init__(self):
+        self.logger = logging.getLogger(__name__)
+    
+    def resolve_library_error(self, error: Exception, library_name: str) -> Optional[str]:
+        """Attempt to resolve library errors using Context7 MCP."""
+        try:
+            # Check if Context7 MCP is available
+            if self._is_context7_available():
+                return self._get_context7_solution(error, library_name)
+            else:
+                self.logger.warning("Context7 MCP not available, using fallback error resolution")
+                return self._get_fallback_solution(error, library_name)
+                
+        except Exception as e:
+            self.logger.error(f"Error in library resolution: {str(e)}")
+            return None
+    
+    def _is_context7_available(self) -> bool:
+        """Check if Context7 MCP is available."""
+        try:
+            # This would be replaced with actual Context7 MCP check
+            return hasattr(sys, '_context7_available')
+        except Exception:
+            return False
+    
+    def _get_context7_solution(self, error: Exception, library_name: str) -> Optional[str]:
+        """Get solution from Context7 MCP."""
+        try:
+            # This would use actual Context7 MCP calls
+            # For now, we'll simulate the process
+            error_message = str(error)
+            
+            # Simulate Context7 MCP resolution
+            solution = self._simulate_context7_resolution(library_name, error_message)
+            
+            if solution:
+                self.logger.info(f"Context7 MCP provided solution for {library_name}")
+                return solution
+            else:
+                self.logger.warning(f"No Context7 MCP solution found for {library_name}")
+                return None
+                
+        except Exception as e:
+            self.logger.error(f"Context7 MCP resolution failed: {str(e)}")
+            return None
+    
+    def _simulate_context7_resolution(self, library_name: str, error_message: str) -> Optional[str]:
+        """Simulate Context7 MCP resolution (replace with actual implementation)."""
+        # This would be replaced with actual Context7 MCP calls
+        common_solutions = {
+            "requests": {
+                "ConnectionError": "Check network connectivity and verify the URL is accessible",
+                "TimeoutError": "Increase timeout value or check server response time",
+                "HTTPError": "Verify the API endpoint and authentication credentials"
+            },
+            "pandas": {
+                "ValueError": "Check data types and column names in your DataFrame",
+                "KeyError": "Verify column names exist in the DataFrame",
+                "IndexError": "Check DataFrame dimensions and index values"
+            }
+        }
+        
+        for lib, solutions in common_solutions.items():
+            if library_name.lower() in lib.lower():
+                for error_type, solution in solutions.items():
+                    if error_type.lower() in error_message.lower():
+                        return solution
+        
+        return None
+    
+    def _get_fallback_solution(self, error: Exception, library_name: str) -> str:
+        """Get fallback solution when Context7 MCP is not available."""
+        return f"Manual resolution required for {library_name}: {str(error)}"
+
+# Usage in error handling
+def handle_library_error(error: Exception, library_name: str):
+    """Handle library errors with Context7 MCP integration."""
+    resolver = LibraryErrorResolver()
+    solution = resolver.resolve_library_error(error, library_name)
+    
+    if solution:
+        logger.info(f"Resolved {library_name} error: {solution}")
+        return solution
+    else:
+        logger.error(f"Could not resolve {library_name} error: {str(error)}")
+        raise error
+```
+
+## Code Quality Rules
+
+### 1. Type Hints
+**Rule: Always use type hints for function parameters and return values**
+
+```python
+from typing import List, Dict, Optional, Union, Any, Callable
+
+def process_user_data(
+    user_id: int,
+    data: List[Dict[str, Union[str, int, float]]],
+    config: Optional[Dict[str, Any]] = None,
+    callback: Optional[Callable[[Dict], None]] = None
+) -> Dict[str, Any]:
+    """Process user data with comprehensive type hints."""
+    pass
+```
+
+### 2. Input Validation
+**Rule: Always validate inputs at function boundaries**
+
+```python
+from typing import List, Dict, Any
+import logging
+
+logger = logging.getLogger(__name__)
+
+def validate_user_input(data: Any) -> List[Dict[str, Any]]:
+    """Validate user input data."""
+    if not isinstance(data, list):
+        raise ValueError("Input must be a list")
+    
+    if not data:
+        logger.warning("Empty data list provided")
+        return []
+    
+    validated_data = []
+    for i, item in enumerate(data):
+        if not isinstance(item, dict):
+            raise ValueError(f"Item at index {i} must be a dictionary")
+        
+        # Validate required fields
+        required_fields = ['id', 'name']
+        for field in required_fields:
+            if field not in item:
+                raise ValueError(f"Item at index {i} missing required field: {field}")
+        
+        validated_data.append(item)
+    
+    logger.info(f"Validated {len(validated_data)} items")
+    return validated_data
+```
+
+### 3. Resource Management
+**Rule: Always use context managers for resource management**
+
+```python
+import logging
+from contextlib import contextmanager
+from typing import Generator, Any
+
+logger = logging.getLogger(__name__)
+
+@contextmanager
+def managed_database_connection(connection_string: str) -> Generator[Any, None, None]:
+    """Context manager for database connections."""
+    connection = None
+    try:
+        logger.info(f"Establishing database connection: {connection_string}")
+        connection = create_connection(connection_string)
+        yield connection
+        logger.info("Database connection closed successfully")
+    except Exception as e:
+        logger.error(f"Database connection error: {str(e)}", exc_info=True)
+        raise
+    finally:
+        if connection:
+            try:
+                connection.close()
+                logger.debug("Database connection closed")
+            except Exception as e:
+                logger.error(f"Error closing database connection: {str(e)}")
+
+# Usage
+def fetch_user_data(user_id: int) -> Dict[str, Any]:
+    """Fetch user data with managed connection."""
+    with managed_database_connection(DATABASE_URL) as conn:
+        return conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+```
+
+### 4. Configuration Management
+**Rule: Use environment variables and configuration classes**
+
+```python
+import os
+from typing import Optional
+from dataclasses import dataclass
+import logging
+
+logger = logging.getLogger(__name__)
+
+@dataclass
+class AppConfig:
+    """Application configuration with environment variable support."""
+    database_url: str
+    api_key: Optional[str]
+    debug: bool
+    log_level: str
+    
+    @classmethod
+    def from_env(cls) -> 'AppConfig':
+        """Create configuration from environment variables."""
+        logger.info("Loading configuration from environment variables")
+        
+        return cls(
+            database_url=os.getenv('DATABASE_URL', 'sqlite:///./app.db'),
+            api_key=os.getenv('API_KEY'),
+            debug=os.getenv('DEBUG', 'False').lower() == 'true',
+            log_level=os.getenv('LOG_LEVEL', 'INFO')
+        )
+    
+    def validate(self) -> None:
+        """Validate configuration values."""
+        logger.info("Validating configuration")
+        
+        if not self.database_url:
+            raise ValueError("DATABASE_URL is required")
+        
+        if self.debug:
+            logger.warning("Application running in debug mode")
+        
+        logger.info("Configuration validation completed")
+```
+
+## Error Handling Patterns
+
+### 1. Custom Exceptions
+```python
+class ApplicationError(Exception):
+    """Base exception for application errors."""
+    pass
+
+class ValidationError(ApplicationError):
+    """Raised when data validation fails."""
+    pass
+
+class ConfigurationError(ApplicationError):
+    """Raised when configuration is invalid."""
+    pass
+
+class ServiceUnavailableError(ApplicationError):
+    """Raised when external service is unavailable."""
+    pass
+```
+
+### 2. Error Recovery Strategies
+```python
+from typing import Callable, Any, Optional
+import logging
+
+logger = logging.getLogger(__name__)
+
+class ErrorRecoveryManager:
+    """Manage error recovery strategies."""
+    
+    def __init__(self):
+        self.recovery_strategies: Dict[type, Callable] = {}
+        self.logger = logging.getLogger(__name__)
+    
+    def register_strategy(self, exception_type: type, strategy: Callable) -> None:
+        """Register a recovery strategy for an exception type."""
+        self.recovery_strategies[exception_type] = strategy
+        self.logger.debug(f"Registered recovery strategy for {exception_type.__name__}")
+    
+    def execute_with_recovery(self, operation: Callable, *args, **kwargs) -> Any:
+        """Execute operation with automatic error recovery."""
+        try:
+            return operation(*args, **kwargs)
+        except Exception as e:
+            self.logger.warning(f"Operation failed: {str(e)}")
+            return self._attempt_recovery(e, operation, *args, **kwargs)
+    
+    def _attempt_recovery(self, error: Exception, operation: Callable, *args, **kwargs) -> Any:
+        """Attempt to recover from error."""
+        error_type = type(error)
+        
+        if error_type in self.recovery_strategies:
+            strategy = self.recovery_strategies[error_type]
+            self.logger.info(f"Attempting recovery using {strategy.__name__}")
+            return strategy(error, operation, *args, **kwargs)
+        else:
+            self.logger.error(f"No recovery strategy for {error_type.__name__}")
+            raise error
+
+# Usage
+recovery_manager = ErrorRecoveryManager()
+
+def retry_strategy(error: Exception, operation: Callable, *args, **kwargs):
+    """Retry operation with exponential backoff."""
+    # Implementation here
+    pass
+
+recovery_manager.register_strategy(ConnectionError, retry_strategy)
+```
+
+## Testing Rules
+
+### 1. Comprehensive Test Coverage
+```python
+import pytest
+import logging
+from unittest.mock import Mock, patch
+
+logger = logging.getLogger(__name__)
+
+class TestDataProcessor:
+    """Test class with comprehensive logging and error handling."""
+    
+    def setup_method(self):
+        """Set up test fixtures with logging."""
+        logger.info("Setting up test fixtures")
+        self.processor = DataProcessor()
+        self.test_data = [{"id": 1, "name": "test"}]
+    
+    def teardown_method(self):
+        """Clean up test fixtures with logging."""
+        logger.info("Cleaning up test fixtures")
+    
+    def test_successful_processing(self):
+        """Test successful data processing."""
+        logger.info("Testing successful data processing")
+        
+        try:
+            result = self.processor.process_data(self.test_data)
+            assert len(result) == 1
+            assert result[0]["id"] == 1
+            logger.info("Successful processing test passed")
+        except Exception as e:
+            logger.error(f"Successful processing test failed: {str(e)}")
+            raise
+    
+    def test_error_handling(self):
+        """Test error handling with invalid data."""
+        logger.info("Testing error handling")
+        
+        invalid_data = [{"invalid": "data"}]
+        
+        with pytest.raises(ValidationError):
+            self.processor.process_data(invalid_data)
+        
+        logger.info("Error handling test passed")
+    
+    @patch('requests.get')
+    def test_external_service_error(self, mock_get):
+        """Test handling of external service errors."""
+        logger.info("Testing external service error handling")
+        
+        mock_get.side_effect = ConnectionError("Service unavailable")
+        
+        with pytest.raises(ServiceUnavailableError):
+            self.processor.fetch_external_data()
+        
+        logger.info("External service error test passed")
+```
+
+## Code Review Checklist
+
+### Before Committing Code
+- [ ] All functions have comprehensive logging
+- [ ] No silent error handling or bypassing
+- [ ] All exceptions are properly caught and handled
+- [ ] Type hints are used for all functions
+- [ ] Input validation is implemented
+- [ ] Resource management uses context managers
+- [ ] Configuration uses environment variables
+- [ ] Custom exceptions are defined for domain errors
+- [ ] Tests cover error scenarios
+- [ ] Context7 MCP integration is used for library errors
+
+### Code Quality Metrics
+- [ ] Logging coverage: 100% of operations logged
+- [ ] Error handling coverage: 100% of potential errors handled
+- [ ] Type hint coverage: 100% of functions typed
+- [ ] Test coverage: >90% for critical paths
+- [ ] Documentation coverage: 100% of public APIs documented
+
+## Summary
+
+Following these coding rules ensures:
+- **Reliability**: Comprehensive error handling prevents silent failures
+- **Observability**: Detailed logging provides visibility into system behavior
+- **Maintainability**: Clear error messages and recovery mechanisms
+- **Debugging**: Context7 MCP integration helps resolve external library issues
+- **Quality**: Type hints and validation prevent runtime errors
+
+Remember: Good code is not just functional, but also robust, observable, and maintainable.
+description:
+globs:
+alwaysApply: false
+---
