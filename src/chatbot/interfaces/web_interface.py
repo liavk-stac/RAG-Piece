@@ -76,7 +76,8 @@ class ChatbotWebInterface:
         @self.app.route('/')
         def index():
             """Main page of the chatbot interface."""
-            return create_html_template()
+            from flask import render_template_string
+            return render_template_string(create_html_template())
         
         @self.app.route('/api/chat', methods=['POST'])
         def chat():
