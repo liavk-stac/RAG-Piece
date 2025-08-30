@@ -270,8 +270,7 @@ class ChatbotWebInterface:
 # Create a simple HTML template for the interface
 def create_html_template():
     """Create a basic HTML template for the chatbot interface."""
-    html_template = """
-<!DOCTYPE html>
+    html_template = '''<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -381,6 +380,14 @@ def create_html_template():
             color: #666;
             font-style: italic;
         }
+        .message-image {
+            margin-top: 10px;
+        }
+        .image-metadata {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -403,7 +410,7 @@ def create_html_template():
         
         <div class="chat-messages" id="chatMessages">
             <div class="message bot-message">
-                Hello! I'm your One Piece expert. I can answer questions about characters, locations, events, and more. I can also analyze images related to One Piece!
+                Hello! I\'m your One Piece expert. I can answer questions about characters, locations, events, and more. I can also analyze images related to One Piece!
             </div>
         </div>
         
@@ -422,23 +429,24 @@ def create_html_template():
         let sessionId = null;
         
         function sendMessage() {
-            const input = document.getElementById('messageInput');
+            console.log("sendMessage function called");
+            const input = document.getElementById("messageInput");
             const message = input.value.trim();
             
             if (!message) return;
             
             // Add user message to chat
-            addMessage(message, 'user');
-            input.value = '';
+            addMessage(message, "user");
+            input.value = "";
             
             // Show loading message
-            const loadingId = addMessage('Thinking...', 'bot', 'loading');
+            const loadingId = addMessage("Thinking...", "bot", "loading");
             
             // Send message to API
-            fetch('/api/chat', {
-                method: 'POST',
+            fetch("/api/chat", {
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json',
+                    "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
                     message: message,
@@ -447,11 +455,14 @@ def create_html_template():
             })
             .then(response => response.json())
             .then(data => {
+                console.log("Chat API response:", data);
+                console.log("Response keys:", Object.keys(data));
+                
                 // Remove loading message
                 removeMessage(loadingId);
                 
                 if (data.error) {
-                    addMessage('Error: ' + data.error, 'bot', 'error');
+                    addMessage("Error: " + data.error, "bot", "error");
                 } else {
                     // Update session ID if provided
                     if (data.session_id) {
@@ -460,51 +471,58 @@ def create_html_template():
                     
                     // Add bot response with image if available
                     const imageData = data.image || null;
-                    addMessage(data.response, 'bot', '', imageData);
+                    console.log("Image data from response:", imageData);
+                    addMessage(data.response, "bot", "", imageData);
                     
                     // Update status
-                    updateStatus(`Response received in ${data.processing_time.toFixed(2)}s (Confidence: ${(data.confidence * 100).toFixed(1)}%)`);
+                    updateStatus("Response received successfully");
                     
                     // Log image retrieval info if available
                     if (imageData) {
-                        console.log('Image retrieved:', imageData);
+                        console.log("Image retrieved:", imageData);
+                        console.log("Image path:", imageData.path);
+                        console.log("Image filename:", imageData.filename);
+                        console.log("Image character:", imageData.character);
+                        console.log("Image content:", imageData.content);
+                        console.log("Image relevance score:", imageData.relevance_score);
                     }
                 }
             })
             .catch(error => {
                 removeMessage(loadingId);
-                addMessage('Error: Failed to send message', 'bot', 'error');
-                console.error('Error:', error);
+                addMessage("Error: Failed to send message", "bot", "error");
+                console.error("Error:", error);
             });
         }
         
         function analyzeImage() {
-            const fileInput = document.getElementById('imageFile');
-            const questionInput = document.getElementById('imageQuestion');
+            console.log("analyzeImage function called");
+            const fileInput = document.getElementById("imageFile");
+            const questionInput = document.getElementById("imageQuestion");
             const file = fileInput.files[0];
             
             if (!file) {
-                alert('Please select an image file');
+                alert("Please select an image file");
                 return;
             }
             
             const formData = new FormData();
-            formData.append('image', file);
-            formData.append('question', questionInput.value);
+            formData.append("image", file);
+            formData.append("question", questionInput.value);
             if (sessionId) {
-                formData.append('session_id', sessionId);
+                formData.append("session_id", sessionId);
             }
             
             // Add user message to chat
-            const message = questionInput.value || 'Analyze this image';
-            addMessage(message + ' [Image: ' + file.name + ']', 'user');
+            const message = questionInput.value || "Analyze this image";
+            addMessage(message + " [Image: " + file.name + "]", "user");
             
             // Show loading message
-            const loadingId = addMessage('Analyzing image...', 'bot', 'loading');
+            const loadingId = addMessage("Analyzing image...", "bot", "loading");
             
             // Send image to API
-            fetch('/api/analyze_image', {
-                method: 'POST',
+            fetch("/api/analyze_image", {
+                method: "POST",
                 body: formData
             })
             .then(response => response.json())
@@ -513,7 +531,7 @@ def create_html_template():
                 removeMessage(loadingId);
                 
                 if (data.error) {
-                    addMessage('Error: ' + data.error, 'bot', 'error');
+                    addMessage("Error: " + data.error, "bot", "error");
                 } else {
                     // Update session ID if provided
                     if (data.session_id) {
@@ -521,60 +539,77 @@ def create_html_template():
                     }
                     
                     // Add bot response
-                    addMessage(data.response, 'bot');
+                    addMessage(data.response, "bot");
                     
                     // Update status
-                    updateStatus(`Image analyzed in ${data.processing_time.toFixed(2)}s (Confidence: ${(data.confidence * 100).toFixed(1)}%)`);
+                    updateStatus("Image analyzed successfully");
                 }
             })
             .catch(error => {
                 removeMessage(loadingId);
-                addMessage('Error: Failed to analyze image', 'bot', 'error');
-                console.error('Error:', error);
+                addMessage("Error: Failed to analyze image", "bot", "error");
+                console.error("Error:", error);
             });
             
             // Clear inputs
-            fileInput.value = '';
-            questionInput.value = '';
+            fileInput.value = "";
+            questionInput.value = "";
         }
         
-        function addMessage(text, sender, className = '', imageData = null) {
-            const messagesDiv = document.getElementById('chatMessages');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${sender}-message ${className}`;
+        function addMessage(text, sender, className = "", imageData = null) {
+            console.log("addMessage function called with:", {text, sender, className, imageData});
+            const messagesDiv = document.getElementById("chatMessages");
+            const messageDiv = document.createElement("div");
+            messageDiv.className = "message " + sender + "-message " + className;
             
             // Add text content
-            const textDiv = document.createElement('div');
+            const textDiv = document.createElement("div");
             textDiv.textContent = text;
             messageDiv.appendChild(textDiv);
             
             // Add image if available
             if (imageData && imageData.path) {
-                const imageDiv = document.createElement('div');
-                imageDiv.className = 'message-image';
+                console.log("Adding image to message:", imageData);
                 
-                const img = document.createElement('img');
-                img.src = `/api/image/${imageData.path.replace(/^.*[\\\/]/, '')}`; // Extract filename from path
-                img.alt = imageData.filename || 'Retrieved image';
-                img.style.maxWidth = '100%';
-                img.style.maxHeight = '300px';
-                img.style.borderRadius = '5px';
-                img.style.marginTop = '10px';
+                const imageDiv = document.createElement("div");
+                imageDiv.className = "message-image";
+                
+                const img = document.createElement("img");
+                // Extract filename from path - handle both full paths and just filenames
+                let imageSrc = imageData.path;
+                if (imageData.path.includes("/") || imageData.path.includes("\\")) {
+                    imageSrc = imageData.path.replace(/^.*[\\\\/]/, ""); // Extract filename from path
+                }
+                img.src = "/api/image/" + imageSrc;
+                img.alt = imageData.filename || "Retrieved image";
+                img.style.maxWidth = "100%";
+                img.style.maxHeight = "300px";
+                img.style.borderRadius = "5px";
+                img.style.marginTop = "10px";
                 
                 // Add image metadata
-                const metadataDiv = document.createElement('div');
-                metadataDiv.className = 'image-metadata';
-                metadataDiv.style.fontSize = '12px';
-                metadataDiv.style.color = '#666';
-                metadataDiv.style.marginTop = '5px';
-                metadataDiv.textContent = `📸 ${imageData.character} - ${imageData.content} (Relevance: ${(imageData.relevance_score * 100).toFixed(0)}%)`;
+                const metadataDiv = document.createElement("div");
+                metadataDiv.className = "image-metadata";
+                
+                let metadataText = "📸 ";
+                if (imageData.character) metadataText += imageData.character + " - ";
+                if (imageData.content) metadataText += imageData.content;
+                if (imageData.relevance_score !== undefined) {
+                    metadataText += " (Relevance: " + (imageData.relevance_score * 100).toFixed(0) + "%)";
+                }
+                metadataDiv.textContent = metadataText;
                 
                 imageDiv.appendChild(img);
                 imageDiv.appendChild(metadataDiv);
                 messageDiv.appendChild(imageDiv);
+                
+                console.log("Image element created with src:", img.src);
+            } else if (imageData) {
+                console.log("Image data available but no path:", imageData);
+                console.log("Image data keys:", Object.keys(imageData));
             }
             
-            const messageId = 'msg_' + Date.now();
+            const messageId = "msg_" + Date.now();
             messageDiv.id = messageId;
             
             messagesDiv.appendChild(messageDiv);
@@ -591,16 +626,17 @@ def create_html_template():
         }
         
         function handleKeyPress(event) {
-            if (event.key === 'Enter') {
+            if (event.key === "Enter") {
                 sendMessage();
             }
         }
         
         function resetConversation() {
-            fetch('/api/reset', {
-                method: 'POST',
+            console.log("Reset conversation called");
+            fetch("/api/reset", {
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json',
+                    "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
                     session_id: sessionId
@@ -608,50 +644,54 @@ def create_html_template():
             })
             .then(response => response.json())
             .then(data => {
+                console.log("Reset response:", data);
                 if (data.error) {
-                    updateStatus('Error: ' + data.error, 'error');
+                    updateStatus("Error: " + data.error, "error");
                 } else {
                     // Clear chat messages
-                    const messagesDiv = document.getElementById('chatMessages');
+                    const messagesDiv = document.getElementById("chatMessages");
                     messagesDiv.innerHTML = '<div class="message bot-message">Hello! I\'m your One Piece expert. I can answer questions about characters, locations, events, and more. I can also analyze images related to One Piece!</div>';
                     
                     // Reset session
                     sessionId = null;
-                    updateStatus('Conversation reset successfully');
+                    updateStatus("Conversation reset successfully");
                 }
             })
             .catch(error => {
-                updateStatus('Error: Failed to reset conversation', 'error');
-                console.error('Error:', error);
+                console.error("Reset error:", error);
+                updateStatus("Error: Failed to reset conversation", "error");
             });
         }
         
         function getStatus() {
-            fetch('/api/status')
+            console.log("Get status called");
+            fetch("/api/status")
             .then(response => response.json())
             .then(data => {
+                console.log("Status response:", data);
                 if (data.error) {
-                    updateStatus('Error: ' + data.error, 'error');
+                    updateStatus("Error: " + data.error, "error");
                 } else {
                     const uptime = Math.floor(data.uptime / 60);
-                    updateStatus(`Chatbot Status: Ready | Uptime: ${uptime} minutes | Total Queries: ${data.conversation_summary?.total_queries_processed || 0}`);
+                    updateStatus("Chatbot Status: Ready | Uptime: " + uptime + " minutes | Total Queries: " + (data.conversation_summary?.total_queries_processed || 0));
                 }
             })
             .catch(error => {
-                updateStatus('Error: Failed to get status', 'error');
-                console.error('Error:', error);
+                console.error("Status error:", error);
+                updateStatus("Error: Failed to get status", "error");
             });
         }
         
-        function updateStatus(message, className = '') {
-            const statusDiv = document.getElementById('status');
+        function updateStatus(message, className = "") {
+            const statusDiv = document.getElementById("status");
             statusDiv.textContent = message;
-            statusDiv.className = 'status ' + className;
+            statusDiv.className = "status " + className;
         }
+        
+        console.log("JavaScript loaded successfully!");
     </script>
 </body>
-</html>
-    """
+</html>'''
     
     return html_template
 
@@ -682,6 +722,6 @@ if __name__ == '__main__':
     try:
         web_interface.run()
     except KeyboardInterrupt:
-        print("\\nShutting down web interface...")
+        print("\nShutting down web interface...")
     finally:
         web_interface.cleanup()
