@@ -155,6 +155,19 @@ class ChatbotOrchestrator:
             # Update performance metrics
             self._update_performance_metrics(conversation_turn)
             
+            # Extract image data from pipeline result if available
+            image_data = None
+            # Get image data directly from image_retrieval agent (more reliable)
+            if 'image_retrieval' in pipeline_result.get('agent_outputs', {}):
+                image_retrieval_output = pipeline_result['agent_outputs']['image_retrieval']
+                if image_retrieval_output.get('success') and image_retrieval_output.get('image'):
+                    image_data = image_retrieval_output['image']
+            # Fallback: try to get image data from the response agent
+            elif 'response' in pipeline_result.get('agent_outputs', {}):
+                response_output = pipeline_result['agent_outputs']['response']
+                if response_output.get('image'):
+                    image_data = response_output['image']
+            
             # Prepare response
             response = {
                 'response': conversation_turn.response,
@@ -162,6 +175,7 @@ class ChatbotOrchestrator:
                 'processing_time': conversation_turn.processing_time,
                 'session_id': self.current_session_id,
                 'conversation_turn': len(self.conversation_history),
+                'image': image_data,  # Include image data if available
                 'metadata': {
                     'agents_executed': list(pipeline_result.get('agent_outputs', {}).keys()),
                     'pipeline_success': True,

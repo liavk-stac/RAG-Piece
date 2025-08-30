@@ -146,6 +146,7 @@ def create_simple_html_template():
         }
 
         function addMessage(text, sender, className, imageData) {
+            console.log('addMessage called with:', {text, sender, className, imageData});
             const messagesDiv = document.getElementById('chatMessages');
             const messageDiv = document.createElement('div');
             messageDiv.className = 'message ' + sender + '-message ' + (className || '');
@@ -157,6 +158,7 @@ def create_simple_html_template():
 
             // Add image if available
             if (imageData) {
+                console.log('Processing image data:', imageData);
                 const imageDiv = document.createElement('div');
                 imageDiv.className = 'message-image';
 
@@ -167,7 +169,13 @@ def create_simple_html_template():
                     img.alt = 'Uploaded image';
                 } else if (imageData.path) {
                     // Retrieved image from backend
-                    img.src = '/api/image/' + imageData.path.split('/').pop();
+                    // Use the full path if available, otherwise construct from folder and filename
+                    let imagePath = imageData.path;
+                    if (!imagePath.includes('/') && imageData.metadata && imageData.metadata.folder) {
+                        // Construct path from folder and filename if path is just filename
+                        imagePath = imageData.metadata.folder + '/' + imageData.filename;
+                    }
+                    img.src = '/api/image/' + imagePath;
                     img.alt = imageData.filename || 'Retrieved image';
                 }
 
@@ -249,12 +257,19 @@ def create_simple_html_template():
                     }
                     
                     // Add bot response with retrieved image if available
+                    console.log('Bot response data:', data);
+                    console.log('Image data from response:', data.image);
                     addMessage(data.response, 'bot', '', data.image);
                     updateStatus('Response received');
                     
-                    // Clear selected image after successful processing
+                    // Clear selected image from upload interface only (not from chat)
                     if (selectedImage) {
-                        removeImage();
+                        // Reset upload interface without affecting chat display
+                        document.getElementById('imageInput').value = '';
+                        document.getElementById('imagePreview').style.display = 'none';
+                        document.getElementById('removeImageBtn').style.display = 'none';
+                        document.getElementById('uploadStatus').textContent = '';
+                        selectedImage = null;
                     }
                 }
             })
@@ -392,6 +407,15 @@ def chat():
                 logger.error(f"Text processing error: {e}")
                 return jsonify({'error': error_msg}), 500
 
+        # Debug: Log the response structure
+        logger.info(f"Response structure: {list(response.keys())}")
+        if 'image' in response:
+            logger.info(f"Image data present: {response['image'] is not None}")
+            if response['image']:
+                logger.info(f"Image path: {response['image'].get('path', 'None')}")
+        else:
+            logger.info("No image key in response")
+            
         return jsonify(response)
 
     except Exception as e:

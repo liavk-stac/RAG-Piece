@@ -299,8 +299,8 @@ class RouterAgent(BaseAgent):
         if complexity == QueryComplexity.COMPLEX:
             required_agents.append(AgentType.REASONING)
         
-        # Always end with response agent
-        required_agents.append(AgentType.RESPONSE)
+        # Response agent is handled separately by the orchestrator
+        # required_agents.append(AgentType.RESPONSE)
         
         return required_agents
     
@@ -323,8 +323,8 @@ class RouterAgent(BaseAgent):
         if AgentType.REASONING in required_agents:
             execution_order.append(AgentType.REASONING)
         
-        # End with response agent
-        execution_order.append(AgentType.RESPONSE)
+        # Response agent is handled separately by the orchestrator
+        # execution_order.append(AgentType.RESPONSE)
         
         return execution_order
     
@@ -422,6 +422,11 @@ class RouterAgent(BaseAgent):
         
         # Conservative image relevance assessment
         if self._has_high_image_relevance(intent, input_data.query or ""):
+            return True
+        
+        # For One Piece related queries, be more inclusive with image retrieval
+        # This helps provide visual context for character, location, and concept queries
+        if self._is_one_piece_related(input_data.query or ""):
             return True
         
         # Skip for low-confidence cases

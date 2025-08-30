@@ -543,8 +543,21 @@ Respond with only the numerical score (e.g., 0.85)."""
         }
         
         if best_image:
+            # Convert full path to relative path for frontend
+            full_path = best_image['full_path']
+            images_dir = str(self.config.IMAGES_PATH)
+            if full_path.startswith(images_dir):
+                relative_path = full_path[len(images_dir):].lstrip('\\/')
+            else:
+                # Fallback: construct relative path from folder and filename
+                extension = best_image.get('extension', '')
+                if extension and not extension.startswith('.'):
+                    extension = '.' + extension
+                relative_path = f"{best_image.get('folder', '')}/{best_image['filename']}{extension}"
+            
             response['image'] = {
-                'path': best_image['full_path'],
+                'path': relative_path,  # Use relative path for frontend
+                'full_path': full_path,  # Keep full path for reference
                 'filename': best_image['filename'],
                 'character': best_image['character'],
                 'content': best_image['content'],
