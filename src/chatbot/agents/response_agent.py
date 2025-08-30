@@ -219,6 +219,17 @@ I searched the One Piece database for information about "{query}", but I couldn'
             'llm_used': True,
         }
         
+        # Add image information if available from image retrieval agent
+        if 'image_retrieval' in agent_outputs:
+            image_retrieval_output = agent_outputs['image_retrieval']
+            if image_retrieval_output.get('success') and image_retrieval_output.get('image'):
+                final_output['image'] = image_retrieval_output['image']
+                final_output['image_metadata'] = {
+                    'intent_analysis': image_retrieval_output.get('intent_analysis', {}),
+                    'candidates_count': image_retrieval_output.get('candidates_count', 0),
+                    'relevance_score': image_retrieval_output['image'].get('relevance_score', 0.0)
+                }
+        
         self.logger.info("Final response generated successfully")
         
         return final_output

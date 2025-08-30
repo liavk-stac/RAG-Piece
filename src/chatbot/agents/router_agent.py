@@ -151,6 +151,11 @@ class RouterAgent(BaseAgent):
         # Select required agents
         required_agents = self._select_agents(intent, complexity, modality)
         
+        # Add image retrieval agent if query might benefit from visual context
+        if self._should_include_image_retrieval(intent, complexity, modality, input_data):
+            if AgentType.IMAGE_RETRIEVAL not in required_agents:
+                required_agents.append(AgentType.IMAGE_RETRIEVAL)
+        
         # Determine execution order
         execution_order = self._determine_execution_order(required_agents, intent)
         
@@ -309,6 +314,9 @@ class RouterAgent(BaseAgent):
         if AgentType.IMAGE_ANALYSIS in required_agents:
             execution_order.append(AgentType.IMAGE_ANALYSIS)
         
+        if AgentType.IMAGE_RETRIEVAL in required_agents:
+            execution_order.append(AgentType.IMAGE_RETRIEVAL)
+        
         if AgentType.TIMELINE in required_agents:
             execution_order.append(AgentType.TIMELINE)
         
@@ -371,17 +379,9 @@ class RouterAgent(BaseAgent):
     
     def _is_one_piece_related(self, query: str) -> bool:
         """Check if the query is related to One Piece."""
-        # This is a simple heuristic - in a real system, you might use
-        # more sophisticated methods like embedding similarity
-        one_piece_terms = [
-            'one piece', 'luffy', 'zoro', 'nami', 'usopp', 'sanji',
-            'chopper', 'robin', 'franky', 'brook', 'jimbe', 'ace',
-            'sabo', 'dragon', 'garp', 'whitebeard', 'kaido', 'big mom',
-            'shanks', 'blackbeard', 'roger', 'rayleigh'
-        ]
-        
-        query_lower = query.lower()
-        return any(term in query_lower for term in one_piece_terms)
+        # Use the comprehensive keyword extraction method
+        keywords = self._extract_one_piece_keywords(query)
+        return len(keywords) > 0
     
     def _validate_input(self, input_data: AgentInput) -> bool:
         """Validate input data for the router agent."""
@@ -391,3 +391,184 @@ class RouterAgent(BaseAgent):
         
         # Router agent specific validation can be added here if needed
         return True
+    
+    def _should_include_image_retrieval(self, intent: QueryIntent, complexity: QueryComplexity, 
+                                       modality: Modality, input_data: AgentInput) -> bool:
+        """
+        Smart decision on whether to include image retrieval in the agent pipeline.
+        
+        Uses conservative approach: only include when confident of good visual match.
+        
+        Args:
+            intent: Detected query intent
+            complexity: Query complexity level
+            modality: Input modality
+            input_data: Input data containing query and conversation history
+            
+        Returns:
+            True if image retrieval should be included, False otherwise
+        """
+        # Always include for image-related queries
+        if intent == QueryIntent.IMAGE_ANALYSIS or modality == Modality.IMAGE_ONLY:
+            return True
+        
+        # Skip for general conversation (not One Piece related)
+        if not self._is_one_piece_related(input_data.query or ""):
+            return False
+        
+        # Skip for follow-up questions (conservative approach)
+        if self._is_follow_up_question(input_data):
+            return False
+        
+        # Conservative image relevance assessment
+        if self._has_high_image_relevance(intent, input_data.query or ""):
+            return True
+        
+        # Skip for low-confidence cases
+        return False
+    
+    def _is_follow_up_question(self, input_data: AgentInput) -> bool:
+        """
+        Detect if the current query is a follow-up to previous questions.
+        
+        Args:
+            input_data: Input data containing query and conversation history
+            
+        Returns:
+            True if this appears to be a follow-up question
+        """
+        if not input_data.conversation_history:
+            return False
+        
+        current_query = input_data.query or ""
+        conversation_history = input_data.conversation_history
+        
+        # Look for follow-up indicators in the current query
+        follow_up_indicators = [
+            'what happened next', 'tell me more', 'what about', 'how about',
+            'what else', 'continue', 'go on', 'and then', 'after that',
+            'why did', 'how did', 'what caused', 'what led to',
+            'next', 'then', 'after', 'before', 'during'
+        ]
+        
+        query_lower = current_query.lower()
+        if any(indicator in query_lower for indicator in follow_up_indicators):
+            return True
+        
+        # Check if subject matter is similar to previous questions
+        if self._has_similar_subject_matter(current_query, conversation_history):
+            return True
+        
+        return False
+    
+    def _has_similar_subject_matter(self, current_query: str, conversation_history: List[Dict[str, Any]]) -> bool:
+        """
+        Check if current query has similar subject matter to previous questions.
+        
+        Args:
+            current_query: Current user query
+            conversation_history: List of previous conversation turns
+            
+        Returns:
+            True if subject matter is similar
+        """
+        if not conversation_history:
+            return False
+        
+        # Extract One Piece keywords from current query
+        current_keywords = self._extract_one_piece_keywords(current_query)
+        if not current_keywords:
+            return False
+        
+        # Check last few conversation turns for similar keywords
+        recent_turns = conversation_history[-3:]  # Last 3 turns
+        
+        for turn in recent_turns:
+            if 'query' in turn:
+                previous_keywords = self._extract_one_piece_keywords(turn['query'])
+                # If there's significant keyword overlap, consider it similar
+                if len(set(current_keywords) & set(previous_keywords)) >= 1:
+                    return True
+        
+        return False
+    
+    def _extract_one_piece_keywords(self, query: str) -> List[str]:
+        """
+        Extract One Piece specific keywords from a query.
+        
+        Args:
+            query: User query string
+            
+        Returns:
+            List of One Piece keywords found
+        """
+        one_piece_keywords = [
+            # Characters
+            'luffy', 'zoro', 'nami', 'usopp', 'sanji', 'chopper', 'robin', 
+            'franky', 'brook', 'jinbe', 'ace', 'sabo', 'dragon', 'garp',
+            'whitebeard', 'kaido', 'big mom', 'shanks', 'blackbeard', 'roger',
+            # Locations
+            'arabasta', 'water7', 'enies lobby', 'marineford', 'dressrosa',
+            'wano', 'skypiea', 'fishman island', 'punk hazard',
+            # Concepts
+            'one piece', 'devil fruit', 'haki', 'nakama', 'pirate king',
+            'straw hat', 'crew', 'pirates', 'marine', 'world government',
+            # Ships
+            'going merry', 'thousand sunny', 'sunny', 'merry'
+        ]
+        
+        query_lower = query.lower()
+        found_keywords = []
+        
+        for keyword in one_piece_keywords:
+            if keyword in query_lower:
+                found_keywords.append(keyword)
+        
+        return found_keywords
+    
+    def _has_high_image_relevance(self, intent: QueryIntent, query: str) -> bool:
+        """
+        Conservative assessment of whether a query has high image relevance.
+        
+        Args:
+            intent: Detected query intent
+            query: User query string
+            
+        Returns:
+            True if query is likely to have good image matches
+        """
+        query_lower = query.lower()
+        
+        # High confidence cases
+        if intent == QueryIntent.CHARACTER:
+            return True
+        
+        if intent == QueryIntent.LOCATION:
+            return True
+        
+        # Explicit image requests
+        if any(phrase in query_lower for phrase in ['show me', 'picture of', 'image of', 'photo of']):
+            return True
+        
+        # Crew/group queries (likely to have crew images)
+        if intent == QueryIntent.SEARCH:
+            crew_keywords = ['crew', 'straw hat', 'pirates', 'team', 'group', 'together']
+            if any(keyword in query_lower for keyword in crew_keywords):
+                return True
+        
+        # Ship-related queries
+        if any(term in query_lower for term in ['ship', 'merry', 'sunny', 'vessel']):
+            return True
+        
+        # Specific character names (likely to have character images)
+        character_names = ['luffy', 'zoro', 'nami', 'usopp', 'sanji', 'chopper', 'robin', 'franky', 'brook', 'jinbe']
+        if any(name in query_lower for name in character_names):
+            return True
+        
+        # General One Piece concept queries (likely to have logo/cover images)
+        one_piece_concepts = ['one piece', 'devil fruit', 'haki', 'nakama', 'pirate king']
+        if any(concept in query_lower for concept in one_piece_concepts):
+            return True
+        
+        # Conservative approach: only include for high-confidence cases
+        return False

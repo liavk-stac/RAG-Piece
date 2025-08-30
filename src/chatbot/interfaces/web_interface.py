@@ -76,7 +76,7 @@ class ChatbotWebInterface:
         @self.app.route('/')
         def index():
             """Main page of the chatbot interface."""
-            return render_template('index.html')
+            return create_html_template()
         
         @self.app.route('/api/chat', methods=['POST'])
         def chat():
@@ -175,6 +175,32 @@ class ChatbotWebInterface:
                 
             except Exception as e:
                 self.logger.error(f"End session error: {e}", exc_info=True)
+                return jsonify({'error': str(e)}), 500
+        
+        @self.app.route('/api/image/<path:image_path>')
+        def serve_image(image_path):
+            """Serve images from the images directory."""
+            try:
+                import os
+                from flask import send_from_directory
+                
+                # Ensure the path is safe (no directory traversal)
+                if '..' in image_path or image_path.startswith('/'):
+                    return jsonify({'error': 'Invalid image path'}), 400
+                
+                # Get the images directory from config
+                images_dir = self.config.IMAGES_PATH
+                full_path = os.path.join(images_dir, image_path)
+                
+                # Check if file exists and is within images directory
+                if not os.path.exists(full_path) or not os.path.commonpath([images_dir, full_path]) == images_dir:
+                    return jsonify({'error': 'Image not found'}), 404
+                
+                # Serve the image
+                return send_from_directory(images_dir, image_path)
+                
+            except Exception as e:
+                self.logger.error(f"Image serving error: {e}", exc_info=True)
                 return jsonify({'error': str(e)}), 500
         
         # Error handlers
@@ -431,11 +457,17 @@ def create_html_template():
                         sessionId = data.session_id;
                     }
                     
-                    // Add bot response
-                    addMessage(data.response, 'bot');
+                    // Add bot response with image if available
+                    const imageData = data.image || null;
+                    addMessage(data.response, 'bot', '', imageData);
                     
                     // Update status
                     updateStatus(`Response received in ${data.processing_time.toFixed(2)}s (Confidence: ${(data.confidence * 100).toFixed(1)}%)`);
+                    
+                    // Log image retrieval info if available
+                    if (imageData) {
+                        console.log('Image retrieved:', imageData);
+                    }
                 }
             })
             .catch(error => {
@@ -505,11 +537,41 @@ def create_html_template():
             questionInput.value = '';
         }
         
-        function addMessage(text, sender, className = '') {
+        function addMessage(text, sender, className = '', imageData = null) {
             const messagesDiv = document.getElementById('chatMessages');
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${sender}-message ${className}`;
-            messageDiv.textContent = text;
+            
+            // Add text content
+            const textDiv = document.createElement('div');
+            textDiv.textContent = text;
+            messageDiv.appendChild(textDiv);
+            
+            // Add image if available
+            if (imageData && imageData.path) {
+                const imageDiv = document.createElement('div');
+                imageDiv.className = 'message-image';
+                
+                const img = document.createElement('img');
+                img.src = `/api/image/${imageData.path.replace(/^.*[\\\/]/, '')}`; // Extract filename from path
+                img.alt = imageData.filename || 'Retrieved image';
+                img.style.maxWidth = '100%';
+                img.style.maxHeight = '300px';
+                img.style.borderRadius = '5px';
+                img.style.marginTop = '10px';
+                
+                // Add image metadata
+                const metadataDiv = document.createElement('div');
+                metadataDiv.className = 'image-metadata';
+                metadataDiv.style.fontSize = '12px';
+                metadataDiv.style.color = '#666';
+                metadataDiv.style.marginTop = '5px';
+                metadataDiv.textContent = `📸 ${imageData.character} - ${imageData.content} (Relevance: ${(imageData.relevance_score * 100).toFixed(0)}%)`;
+                
+                imageDiv.appendChild(img);
+                imageDiv.appendChild(metadataDiv);
+                messageDiv.appendChild(imageDiv);
+            }
             
             const messageId = 'msg_' + Date.now();
             messageDiv.id = messageId;

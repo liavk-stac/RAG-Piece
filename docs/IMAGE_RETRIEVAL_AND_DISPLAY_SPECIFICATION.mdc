@@ -1,0 +1,447 @@
+# Image Retrieval and Display Feature Specification
+
+## 🎯 **Feature Overview**
+
+### **Purpose**
+Implement an LLM-powered image retrieval system that intelligently finds and displays the most relevant image from the `data/images/` database based on user queries. The system will show a single, contextually appropriate image alongside text responses.
+
+### **Key Requirements**
+- **LLM Integration**: Use LLM to analyze queries and select relevant images
+- **Single Image Display**: Show only one most relevant image at a time
+- **Smart Matching**: Match query intent with image metadata
+- **Folder-Based Organization**: Leverage existing folder structure for metadata
+- **Web UI Integration**: Display images in the web interface
+
+---
+
+## 🏗️ **System Architecture**
+
+### **New Components Required**
+
+#### **1. Image Retrieval Agent**
+- **Location**: `src/chatbot/agents/image_retrieval_agent.py`
+- **Purpose**: LLM-powered image selection and retrieval
+- **Integration**: Works alongside existing agents in the pipeline
+
+#### **2. Image Metadata Parser**
+- **Location**: `src/chatbot/utils/image_metadata_parser.py`
+- **Purpose**: Extract metadata from folder structure and filenames
+- **Output**: Structured metadata for image search
+
+#### **3. Image Database Index**
+- **Location**: `src/chatbot/core/image_database.py`
+- **Purpose**: Maintain searchable index of available images
+- **Storage**: In-memory index with metadata mapping
+
+#### **4. Image Display Component**
+- **Location**: `src/chatbot/interfaces/web_interface.py` (enhancement)
+- **Purpose**: Display selected images in web UI
+- **Layout**: Image alongside text response
+
+---
+
+## 🔍 **Image Selection Process**
+
+### **Step 1: Query Analysis with LLM**
+```
+User Query: "Tell me about the Straw Hat Pirates"
+↓
+LLM Analysis: "User wants information about the crew as a group"
+↓
+Image Intent: "Need image showing crew/group together"
+```
+
+### **Step 2: Image Database Scanning**
+```
+Scan data/images/ folder structure:
+├── Straw_Hat_pirates/
+│   ├── Luffy_and_His_Crew.png
+│   └── Crew_Adventures.png
+├── Monkey_D_Luffy/
+│   ├── luffy_gear2.png
+│   └── luffy_water7.png
+└── Roronoa_Zoro/
+    ├── zoro_swords.png
+    └── zoro_training.png
+```
+
+### **Step 3: Metadata Extraction**
+```
+Image: Straw_Hat_pirates/Luffy_and_His_Crew.png
+Metadata:
+- Character: "Straw Hat Pirates" (from folder)
+- Content: "Luffy and His Crew" (from filename)
+- Type: "Group/Crew" (inferred from content)
+- Relevance Score: 0 (to be calculated)
+```
+
+### **Step 4: LLM-Based Relevance Scoring**
+```
+For each potential image:
+1. Create search query: "Find image showing [character] in [context]"
+2. LLM evaluates relevance: "How well does this image match the query?"
+3. Assign confidence score (0.0-1.0)
+4. Rank images by score
+```
+
+### **Step 5: Best Match Selection**
+```
+Top scoring image: Straw_Hat_pirates/Luffy_and_His_Crew.png
+Score: 0.95 (excellent match for crew query)
+Action: Select and return this image
+```
+
+---
+
+## 📁 **Folder Structure and Metadata Convention**
+
+### **Current Structure Analysis**
+```
+data/images/
+├── Straw_Hat_pirates/          # Group/crew images
+│   ├── Luffy_and_His_Crew.png  # Crew group photo
+│   └── Going_Merry_Ship.png    # Ship image
+├── Monkey_D_Luffy/             # Individual character
+│   ├── luffy_gear2.png         # Specific form/outfit
+│   ├── luffy_water7.png        # Location-specific
+│   └── luffy_arabasta.png      # Arc-specific
+└── Roronoa_Zoro/               # Individual character
+    ├── zoro_swords.png         # Character feature
+    └── zoro_training.png       # Activity-specific
+```
+
+### **Metadata Extraction Rules**
+- **Folder Name**: Primary character/entity identifier
+- **Filename**: Scene, location, outfit, or feature description
+- **Path Combination**: Full context for search relevance
+
+### **Example Metadata Mapping**
+```
+Path: Monkey_D_Luffy/luffy_arabasta.png
+Metadata:
+{
+    "character": "Monkey D. Luffy",
+    "location": "Arabasta",
+    "content": "luffy arabasta",
+    "type": "character_location",
+    "full_path": "data/images/Monkey_D_Luffy/luffy_arabasta.png"
+}
+```
+
+---
+
+## 🤖 **Image Retrieval Agent Implementation**
+
+### **Agent Structure**
+```python
+class ImageRetrievalAgent(BaseAgent):
+    def __init__(self, config: ChatbotConfig):
+        # Initialize LLM client, image database, metadata parser
+        
+    def _execute_agent(self, input_data: AgentInput) -> Dict[str, Any]:
+        # Main execution logic
+        
+    def _analyze_query_intent(self, query: str) -> Dict[str, Any]:
+        # Use LLM to analyze what type of image is needed
+        
+    def _find_relevant_images(self, intent: Dict[str, Any]) -> List[Dict[str, Any]]:
+        # Search image database for potential matches
+        
+    def _score_image_relevance(self, image: Dict[str, Any], intent: Dict[str, Any]) -> float:
+        # Use LLM to score image relevance (0.0-1.0)
+        
+    def _select_best_image(self, scored_images: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+        # Return highest-scoring image or None
+```
+
+### **LLM Integration Points**
+1. **Query Intent Analysis**: "What type of image would be most relevant for this query?"
+2. **Image Relevance Scoring**: "How well does this image match the user's request?"
+3. **Context Understanding**: "What visual elements are most important for this query?"
+
+---
+
+## 🗃️ **Image Database Index**
+
+### **Index Structure**
+```python
+class ImageDatabase:
+    def __init__(self, images_path: str):
+        self.images_path = images_path
+        self.image_index = {}  # Metadata index
+        self._build_index()
+        
+    def _build_index(self):
+        # Scan folder structure and build metadata index
+        
+    def search_images(self, query: Dict[str, Any]) -> List[Dict[str, Any]]:
+        # Search for images matching query criteria
+        
+    def get_image_path(self, image_id: str) -> str:
+        # Return full path to image file
+```
+
+### **Index Building Process**
+1. **Recursive Folder Scanning**: Walk through `data/images/` directory
+2. **Metadata Extraction**: Parse folder names and filenames
+3. **Index Population**: Store metadata with file paths
+4. **Search Optimization**: Create searchable data structures
+
+---
+
+## 🎨 **Web UI Integration**
+
+### **Current UI Structure**
+```
+Web Interface:
+├── Chat Area (text responses)
+├── Image Upload Area
+└── Response Display
+```
+
+### **Enhanced UI Structure**
+```
+Web Interface:
+├── Chat Area (text responses)
+├── Image Upload Area
+├── Response Display
+└── Image Display Area (NEW)
+    ├── Retrieved Image
+    ├── Image Caption
+    └── Image Metadata
+```
+
+### **Image Display Component**
+```html
+<!-- Image Display Section -->
+<div class="image-display-area" id="imageDisplay">
+    <div class="retrieved-image" v-if="selectedImage">
+        <img :src="selectedImage.path" :alt="selectedImage.caption">
+        <div class="image-caption">{{ selectedImage.caption }}</div>
+        <div class="image-metadata">
+            <small>Character: {{ selectedImage.character }}</small>
+            <small>Content: {{ selectedImage.content }}</small>
+        </div>
+    </div>
+</div>
+```
+
+### **UI State Management**
+```javascript
+// Vue.js component state
+data() {
+    return {
+        selectedImage: null,
+        imageLoading: false,
+        imageError: null
+    }
+}
+
+// Methods
+async retrieveImage(query) {
+    this.imageLoading = true;
+    try {
+        const response = await this.callImageRetrievalAPI(query);
+        this.selectedImage = response.image;
+    } catch (error) {
+        this.imageError = error.message;
+    } finally {
+        this.imageLoading = false;
+    }
+}
+```
+
+---
+
+## 🔄 **Integration with Existing Pipeline**
+
+### **Pipeline Enhancement**
+```
+Current Pipeline:
+Router → Search → [Other Agents] → Response
+
+Enhanced Pipeline:
+Router → Search → [Other Agents] → Image Retrieval → Response
+```
+
+### **Agent Execution Order**
+1. **Router Agent**: Determines if image retrieval is needed
+2. **Search Agent**: Retrieves text content
+3. **Image Retrieval Agent**: Finds relevant image
+4. **Response Agent**: Combines text and image in response
+
+### **Response Structure Enhancement**
+```python
+# Current response structure
+{
+    "response": "text response",
+    "metadata": {...}
+}
+
+# Enhanced response structure
+{
+    "response": "text response",
+    "image": {
+        "path": "data/images/Straw_Hat_pirates/Luffy_and_His_Crew.png",
+        "caption": "Luffy and His Crew",
+        "character": "Straw Hat Pirates",
+        "content": "crew group photo",
+        "relevance_score": 0.95
+    },
+    "metadata": {...}
+}
+```
+
+---
+
+## 🧪 **Testing Strategy**
+
+### **Unit Testing**
+- **Image Retrieval Agent**: Test individual agent functionality
+- **Metadata Parser**: Test folder/filename parsing accuracy
+- **Image Database**: Test indexing and search functionality
+- **LLM Integration**: Test query analysis and scoring
+
+### **Integration Testing**
+- **Pipeline Integration**: Test agent integration in pipeline
+- **Response Generation**: Test combined text + image responses
+- **Error Handling**: Test failure scenarios and recovery
+
+### **UI Testing**
+- **Image Display**: Test image rendering and layout
+- **Responsive Design**: Test different screen sizes
+- **User Interaction**: Test image-related user queries
+- **Performance**: Test image loading and display speed
+
+### **Test Scenarios**
+1. **Crew Query**: "Tell me about the Straw Hat Pirates"
+   - Expected: `Luffy_and_His_Crew.png`
+2. **Character Query**: "Who is Luffy?"
+   - Expected: Most representative Luffy image
+3. **Location Query**: "What happened in Arabasta?"
+   - Expected: Relevant Arabasta scene image
+4. **No Image Query**: "What is One Piece?"
+   - Expected: No image displayed
+
+---
+
+## 🚀 **Implementation Steps**
+
+### **Phase 1: Core Components**
+1. **Create Image Metadata Parser**
+2. **Implement Image Database Index**
+3. **Build Image Retrieval Agent**
+4. **Add agent to pipeline**
+
+### **Phase 2: LLM Integration**
+1. **Implement query intent analysis**
+2. **Add image relevance scoring**
+3. **Test LLM-based selection**
+
+### **Phase 3: Web UI Enhancement**
+1. **Add image display component**
+2. **Integrate with response system**
+3. **Test image display functionality**
+
+### **Phase 4: Testing & Refinement**
+1. **Unit tests for all components**
+2. **Integration testing**
+3. **UI testing with Playwright**
+4. **Performance optimization**
+
+---
+
+## 📊 **Performance Considerations**
+
+### **Image Indexing**
+- **Initial Build**: Scan all images on startup (one-time cost)
+- **Incremental Updates**: Monitor folder changes for new images
+- **Memory Usage**: Keep metadata index in memory for fast access
+
+### **Image Retrieval**
+- **Query Analysis**: LLM call for intent analysis (~1-3 seconds)
+- **Database Search**: In-memory search (~milliseconds)
+- **Relevance Scoring**: LLM calls for scoring (~1-3 seconds per image)
+- **Total Time**: Target <10 seconds for image retrieval
+
+### **Image Display**
+- **Image Loading**: Browser image loading and rendering
+- **Responsive Layout**: CSS-based responsive design
+- **Error Handling**: Graceful fallback for missing images
+
+---
+
+## 🛡️ **Error Handling & Edge Cases**
+
+### **No Relevant Images**
+- **Scenario**: Query has no matching images
+- **Response**: No image displayed, text response only
+- **User Experience**: Seamless fallback
+
+### **Multiple High-Score Images**
+- **Scenario**: Multiple images with similar relevance scores
+- **Response**: Select highest score, log alternatives
+- **Future Enhancement**: Allow user to cycle through alternatives
+
+### **Invalid Image Files**
+- **Scenario**: Corrupted or unreadable image files
+- **Response**: Skip invalid files, log errors
+- **Recovery**: Continue with valid images
+
+### **LLM Service Unavailable**
+- **Scenario**: OpenAI API down or rate limited
+- **Response**: Fallback to keyword-based matching
+- **User Experience**: Reduced quality but functional
+
+---
+
+## 🔮 **Future Enhancements**
+
+### **Advanced Image Features**
+1. **Image Captions**: AI-generated descriptive captions
+2. **Image Categories**: Automatic image categorization
+3. **Visual Search**: Find images similar to uploaded images
+4. **Image History**: Remember and suggest previously viewed images
+
+### **User Experience Improvements**
+1. **Image Preferences**: User-defined image preferences
+2. **Image Quality**: High-resolution image options
+3. **Image Collections**: Curated image collections by topic
+4. **Interactive Images**: Clickable image elements with tooltips
+
+### **Performance Optimizations**
+1. **Image Caching**: Cache frequently requested images
+2. **Lazy Loading**: Load images only when needed
+3. **Image Compression**: Optimize image sizes for web
+4. **CDN Integration**: Use CDN for faster image delivery
+
+---
+
+## 📋 **Success Criteria**
+
+### **Functional Requirements**
+- ✅ LLM-powered image selection works correctly
+- ✅ Relevant images are displayed for appropriate queries
+- ✅ Single image display (no multiple images)
+- ✅ Image metadata is accurate and useful
+- ✅ Web UI properly displays images
+
+### **Performance Requirements**
+- ✅ Image retrieval completes within 10 seconds
+- ✅ Web UI image display is responsive
+- ✅ System handles hundreds of images efficiently
+- ✅ Memory usage remains reasonable
+
+### **Quality Requirements**
+- ✅ Image relevance scores are accurate
+- ✅ Selected images match user intent
+- ✅ Error handling is graceful and user-friendly
+- ✅ UI integration is seamless and intuitive
+
+---
+
+This specification provides a comprehensive roadmap for implementing the LLM-powered image retrieval and display feature, ensuring it integrates seamlessly with the existing chatbot system while providing an enhanced user experience.
+description:
+globs:
+alwaysApply: false
+---

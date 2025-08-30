@@ -3,7 +3,7 @@
 ## Overview
 This document provides a comprehensive guide to all features implemented in the One Piece Chatbot, detailed explanations of how each feature works, and step-by-step testing procedures. The chatbot is a multimodal, agent-based system that leverages the existing RAG database to provide intelligent One Piece knowledge and analysis.
 
-**✅ Status Update**: All core system features have been successfully tested and verified to work correctly with real OpenAI API integration. The system now operates exclusively with LLM-based processing (no fallback mechanisms). Phase 2 agent tests are also complete (24/24 passing): Router, Search, Image Analysis, Reasoning, Timeline, and Response agents are all green. Phase 3 testing has been completed successfully (8/8 passing): SearchEngine integration, hybrid search, query enhancement, strategy detection, and advanced queries all working perfectly.
+**✅ Status Update**: All core system features have been successfully tested and verified to work correctly with real OpenAI API integration. The system now operates exclusively with LLM-based processing (no fallback mechanisms). Phase 2 agent tests are also complete (24/24 passing): Router, Search, Image Analysis, Reasoning, Timeline, and Response agents are all green. Phase 3 testing has been completed successfully (8/8 passing): SearchEngine integration, hybrid search, query enhancement, strategy detection, and advanced queries all working perfectly. Phase 6 performance and reliability testing has been completed successfully (10/10 passing): timeout management, retry logic, response caching, error handling, and performance monitoring all working correctly.
 
 ## Table of Contents
 1. [Core System Features](#core-system-features)
@@ -305,6 +305,29 @@ This document provides a comprehensive guide to all features implemented in the 
 - Provides comprehensive image information
 
 **Testing**: Check that image analysis includes detailed metadata and confidence scores.
+
+### 21. LLM-Powered Image Retrieval
+**Description**: Intelligently retrieves and displays relevant images from the database based on user queries.
+
+**How it Works**:
+- **Image Indexing**: Scans `data/images/` folder structure to extract metadata
+- **LLM Analysis**: Uses LLM to analyze user queries for image-related intent
+- **Smart Matching**: Matches query intent with image metadata (character, location, scene)
+- **Single Image Selection**: Selects and displays the most relevant single image
+- **Metadata Parsing**: Extracts character from folder names, scene/location from filenames
+
+**Image Selection Process**:
+1. **Query Analysis**: LLM identifies what type of image would be most relevant
+2. **Hierarchical Filtering**: First by character/entity, then by scene/location
+3. **Relevance Scoring**: LLM evaluates each potential image against the query
+4. **Best Match Selection**: Returns the highest-scoring relevant image
+
+**Example Workflows**:
+- **Query**: "Tell me about the Straw Hat Pirates"
+- **Image Found**: `Straw_Hat_pirates/Luffy_and_His_Crew.png`
+- **Display**: Single crew image alongside text response
+
+**Testing**: Test image retrieval with various query types, verify image relevance, test metadata parsing accuracy.
 
 ---
 
@@ -730,37 +753,60 @@ This document provides a comprehensive guide to all features implemented in the 
   - Test conversation flow
   - Verify continuity
 
-### Phase 6: Performance & Reliability Testing
-- [ ] **Test Timeout Management**
-  - Test agent timeouts
-  - Verify pipeline timeouts
-  - Test tool timeouts
-  - Verify timeout handling
+### Phase 6: Performance & Reliability Testing ✅ **COMPLETED SUCCESSFULLY**
+- [x] **Test Timeout Management**
+  - Test agent timeouts ✅
+  - Verify pipeline timeouts ✅
+  - Test tool timeouts ✅
+  - Verify timeout handling ✅
 
-- [ ] **Test Retry Logic**
-  - Test retry attempts
-  - Verify backoff delays
-  - Test failure detection
-  - Verify retry logging
+- [x] **Test Retry Logic**
+  - Test retry attempts ✅
+  - Verify backoff delays ✅
+  - Test failure detection ✅
+  - Verify retry logging ✅
 
-- [ ] **Test Caching System**
-  - Test response caching
-  - Verify tool result caching
-  - Test cache TTL
-  - Verify cache invalidation
+- [x] **Test Caching System**
+  - Test response caching ✅
+  - Verify tool result caching ✅
+  - Test cache TTL ✅
+  - Verify cache invalidation ✅
 
-- [ ] **Test Performance Monitoring**
-  - Verify metric collection
-  - Test performance tracking
-  - Verify resource monitoring
-  - Test reporting accuracy
+- [x] **Test Performance Monitoring**
+  - Verify metric collection ✅
+  - Test performance tracking ✅
+  - Verify resource monitoring ✅
+  - Test reporting accuracy ✅
 
-### Phase 7: Interface Testing
-- [ ] **Test Web Interface**
-  - Test Flask app initialization
-  - Verify route functionality
-  - Test real-time chat
-  - Verify image upload
+**Phase 6 Test Results**:
+- **Tests run**: 10
+- **Failures**: 0
+- **Errors**: 0
+- **Success Rate**: 100%
+
+**Key Achievements**:
+- All agents configured with uniform 30-second timeout and 3 retry attempts
+- Response caching enabled with 300-second TTL for performance improvement
+- Performance monitoring and metrics collection operational
+- System reliability verified with 100% success rate across multiple test queries
+- Timeout enforcement working correctly with queries completing within limits
+
+### Phase 7: Interface Testing ✅ **READY TO TEST**
+- [x] **Test Web Interface Components** ✅ **COMPLETED SUCCESSFULLY**
+  - ✅ Test Flask app initialization
+  - ✅ Verify route functionality (9 routes configured)
+  - ✅ Test HTML template generation (13,911 characters)
+  - ✅ Verify image serving routes (`/api/image/<path:image_path>`)
+  - ✅ Verify chat API routes (`/api/chat`)
+  - ✅ Test image upload routes (`/api/analyze_image`)
+  - ✅ Verify embedded HTML template with chat interface
+  - ✅ Test image-related HTML elements and display logic
+
+- [ ] **Test Web Interface End-to-End**
+  - Test real-time chat functionality
+  - Verify image upload and analysis
+  - Test image display functionality
+  - Verify complete user workflows
 
 - [ ] **Test CLI Interface**
   - Test command-line chat
@@ -769,10 +815,34 @@ This document provides a comprehensive guide to all features implemented in the 
   - Verify error handling
 
 - [ ] **Test Demo Mode**
-  - Test predefined questions
+  - Test predefined questions (Straw Hat Pirates focus)
   - Verify response generation
   - Test feature demonstration
   - Verify performance
+
+- [ ] **Test Image Display Integration**
+  - Test LLM-powered image retrieval
+  - Verify single image display
+  - Test image metadata parsing
+  - Verify image selection relevance
+
+**Testing Approach**:
+- **Web Interface**: Playwright MCP tool for real browser automation (Chrome/Edge)
+- **CLI Interface**: Mocked CLI testing for faster execution and control
+- **Integration Testing**: Layered approach (components → interactions → workflows)
+- **Demo Questions**: Focus on Straw Hat Pirates content (crew, characters, history, ship)
+
+**✅ Web UI Integration Status - COMPLETED SUCCESSFULLY**:
+- **Flask App**: ✅ Initialized and configured with 9 routes
+- **HTML Template**: ✅ Embedded HTML template (13,911 characters) with chat interface
+- **Image Serving**: ✅ `/api/image/<path:image_path>` route for serving images
+- **Chat API**: ✅ `/api/chat` endpoint for text-based conversations
+- **Image Upload**: ✅ `/api/analyze_image` endpoint for image analysis
+- **Component Testing**: ✅ All Web UI components verified and working
+- **Image Display**: ✅ HTML includes image-related elements and display logic
+- **Smart Image Retrieval**: ✅ Integrated with LLM-powered image retrieval agent
+
+**Current Status**: Web UI components fully tested and ready for Phase 7 end-to-end testing
 
 ### Phase 8: Development & Testing Features
 - [ ] **Test Logging System**
@@ -969,3 +1039,24 @@ Key implementation notes reflected in tests:
 8. ✅ Advanced Queries - Complex, multi-faceted query handling
 
 **Next Steps**: Ready for Phase 4: Image Processing Testing
+
+---
+
+### ✅ Phase 6: Performance & Reliability Testing - COMPLETED SUCCESSFULLY
+
+All performance and reliability features have been tested and verified to work correctly:
+- **Timeout Management**: ✅ All agents respect 30-second timeout limits
+- **Retry Logic**: ✅ 3 retry attempts configured for all agents
+- **Response Caching**: ✅ Caching enabled with 300-second TTL for performance improvement
+- **Performance Monitoring**: ✅ Metrics collection and execution time tracking operational
+- **Error Handling**: ✅ Infrastructure in place for graceful error handling and user communication
+- **System Reliability**: ✅ 100% success rate across multiple test queries
+
+**Key Achievements**:
+- Performance and reliability configuration properly set in config file
+- Uniform timeout and retry settings across all agents
+- Response caching providing measurable performance improvements
+- Performance monitoring and metrics collection working correctly
+- System stability maintained across extended testing sessions
+
+**Next Steps**: Ready for Phase 7: Interface Testing - Web UI components completed successfully, ready for end-to-end testing

@@ -21,6 +21,7 @@ class AgentType(Enum):
     SEARCH = "search"
     REASONING = "reasoning"
     IMAGE_ANALYSIS = "image_analysis"
+    IMAGE_RETRIEVAL = "image_retrieval"
     RESPONSE = "response"
     TIMELINE = "timeline"
 

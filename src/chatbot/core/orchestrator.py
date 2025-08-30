@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from ..config import ChatbotConfig
 from ..agents import (
     RouterAgent, SearchAgent, ReasoningAgent, ImageAnalysisAgent,
-    ResponseAgent, TimelineAgent
+    ImageRetrievalAgent, ResponseAgent, TimelineAgent
 )
 from ..agents.base_agent import AgentInput, AgentOutput
 
@@ -96,6 +96,7 @@ class ChatbotOrchestrator:
             agents['search'] = SearchAgent(self.config)
             agents['reasoning'] = ReasoningAgent(self.config)
             agents['image_analysis'] = ImageAnalysisAgent(self.config)
+            agents['image_retrieval'] = ImageRetrievalAgent(self.config)
             agents['response'] = ResponseAgent(self.config)
             agents['timeline'] = TimelineAgent(self.config)
             
@@ -294,6 +295,13 @@ class ChatbotOrchestrator:
         elif agent_name == 'image_analysis':
             # Image analysis agent gets image data and query context
             pass
+        elif agent_name == 'image_retrieval':
+            # Image retrieval agent gets query context and search results
+            if 'search' in agent_outputs:
+                agent_input.context = {
+                    'search_results': agent_outputs['search'],
+                    'query_intent': agent_outputs.get('router', {}).get('intent', '')
+                }
         elif agent_name == 'reasoning':
             # Reasoning agent gets search results
             if 'search' in agent_outputs:

@@ -12,7 +12,8 @@ import os
 # Load environment variables from .env file
 try:
     from dotenv import load_dotenv
-    load_dotenv()
+    # Force reload to ensure environment variables are available
+    load_dotenv(override=True)
 except ImportError:
     # dotenv not available, continue without it
     pass
@@ -62,6 +63,12 @@ class ChatbotConfig:
     IMAGE_RESIZE_DIMENSIONS: tuple = (1024, 1024)  # Target image dimensions
     IMAGE_QUALITY_THRESHOLD: int = 100  # Minimum image resolution (pixels)
     
+    # === IMAGE RETRIEVAL SETTINGS ===
+    IMAGES_PATH: str = "data/images"  # Path to images directory
+    IMAGE_INDEX_PATH: str = "data/image_index.pkl"  # Path to image index file
+    IMAGE_RELEVANCE_THRESHOLD: float = 0.6  # Minimum relevance score for image selection
+    ENABLE_IMAGE_RETRIEVAL: bool = True  # Enable image retrieval functionality
+    
     # === LLM MODEL SETTINGS ===
     LLM_MODEL_NAME: str = "gpt-4o-mini"  # Primary LLM model for agents
     LLM_MODEL_TEMPERATURE: float = 0.3  # Temperature for balanced creativity
@@ -101,6 +108,8 @@ class ChatbotConfig:
     
     def __post_init__(self):
         """Validate configuration parameters after initialization."""
+        # Ensure environment variables are loaded
+        self._ensure_env_loaded()
         self.update_from_env()  # Load environment variables first
         self._validate_configuration()
     
@@ -142,6 +151,16 @@ class ChatbotConfig:
     def from_dict(cls, config_dict: Dict[str, Any]) -> 'ChatbotConfig':
         """Create configuration from dictionary."""
         return cls(**config_dict)
+    
+    def _ensure_env_loaded(self):
+        """Ensure environment variables are loaded from .env file."""
+        try:
+            from dotenv import load_dotenv
+            # Force reload environment variables
+            load_dotenv(override=True)
+        except ImportError:
+            # dotenv not available, continue without it
+            pass
     
     def update_from_env(self):
         """Update configuration from environment variables."""
