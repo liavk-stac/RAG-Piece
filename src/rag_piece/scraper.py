@@ -332,6 +332,10 @@ class OneWikiScraper:
     def _get_image_info(self, image_name: str) -> Optional[Dict[str, str]]:
         """Get detailed information about an image."""
         try:
+            # Filter out "Featured Article" images
+            if "Featured Article" in image_name:
+                return None
+            
             params = {
                 'action': 'query',
                 'format': 'json',

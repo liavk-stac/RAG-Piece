@@ -5,13 +5,17 @@ This document explains how the One Piece Chatbot processes user queries and imag
 
 ## Pipeline Architecture
 
-The chatbot uses a **6-agent pipeline** that works together to understand, process, and respond to user input:
+The chatbot uses a **7-agent pipeline** that works together to understand, process, and respond to user input:
 
-1. **Router Agent** - Analyzes input and creates execution plan
-2. **Search Agent** - Retrieves relevant knowledge from RAG database
-3. **Image Analysis Agent** - Processes uploaded images (if any)
-4. **Reasoning Agent** - Performs logical analysis and relationship extraction
-5. **Timeline Agent** - Handles temporal and chronological queries
+**Planning Agent:**
+- **Router Agent** - Analyzes input and creates execution plan (does not execute in pipeline)
+
+**Execution Pipeline:**
+1. **Search Agent** - Retrieves relevant knowledge from RAG database
+2. **Image Analysis Agent** - Processes uploaded images (if any)
+3. **Image Retrieval Agent** - Finds and selects relevant images from database
+4. **Timeline Agent** - Handles temporal and chronological queries (if needed)
+5. **Reasoning Agent** - Performs logical analysis and relationship extraction (if needed)
 6. **Response Agent** - Synthesizes all information into final response
 
 ## Complete Flow: Input → Output
@@ -34,7 +38,7 @@ The chatbot uses a **6-agent pipeline** that works together to understand, proce
 - Intent: Analysis + Relationship
 - Complexity: Moderate
 - Modality: Text-only
-- Plan: Router → Search → Reasoning → Response
+- Plan: Router → Search → Image Retrieval → Reasoning → Response
 
 ### 3. **Agent Execution Pipeline** ⚙️
 **Agents execute based on the router's plan:**
@@ -50,6 +54,13 @@ The chatbot uses a **6-agent pipeline** that works together to understand, proce
 - Uses GPT-4o vision model to generate detailed descriptions
 - Cross-references image content with One Piece knowledge
 - Provides comprehensive visual analysis with confidence scores
+
+#### **Image Retrieval Agent** (if relevant images needed)
+- Intelligently selects relevant images from the image database
+- Uses LLM to analyze user queries for image-related intent
+- Matches query intent with image metadata (character, location, scene)
+- Selects the most relevant single image with relevance scoring
+- Provides image data for frontend display alongside text responses
 
 #### **Reasoning Agent** (if needed)
 - Analyzes search results for logical patterns
@@ -86,6 +97,7 @@ The chatbot uses a **6-agent pipeline** that works together to understand, proce
 - Automatically determines which agents are needed
 - Skips unnecessary agents for simple queries
 - Adapts execution plan based on query complexity
+- **Execution Order**: Search → Image Analysis → Image Retrieval → Timeline → Reasoning → Response
 
 ### **Context Awareness**
 - Remembers previous conversation turns

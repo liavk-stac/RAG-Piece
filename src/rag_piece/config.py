@@ -29,7 +29,7 @@ class RAGConfig:
     
     # === KEYWORD EXTRACTION ===
     KEYWORDS_PER_CHUNK: int = 10         # top keywords to extract per chunk
-    MIN_KEYWORD_LENGTH: int = 3          # minimum keyword character length
+    MIN_KEYWORD_LENGTH: int = 1          # minimum keyword character length
     MAX_KEYWORD_LENGTH: int = 30         # maximum keyword character length
     MIN_KEYWORD_DF: int = 1              # must appear in at least N chunks
     MAX_KEYWORD_DF_RATIO: float = 0.8    # must appear in <80% of chunks
@@ -51,8 +51,8 @@ class RAGConfig:
     
     # === RESULT FUSION ===
     FINAL_RESULTS: int = 10              # final results after reranking
-    RERANK_WEIGHT_BM25: float = 0.4      # BM25 weight in fusion
-    RERANK_WEIGHT_SEMANTIC: float = 0.6  # semantic weight in fusion
+    RERANK_WEIGHT_BM25: float = 0.3      # BM25 weight in fusion
+    RERANK_WEIGHT_SEMANTIC: float = 0.7  # semantic weight in fusion
     
     # === LOGGING AND DEBUG ===
     VERBOSE_LOGGING: bool = False        # detailed progress logs
@@ -63,19 +63,19 @@ class RAGConfig:
     ENABLE_SUMMARIZATION: bool = True   # enable article summarization (expensive operation)
     SUMMARY_MODEL: str = "gpt-4o-mini"  # OpenAI model for summarization
     SUMMARY_TEMPERATURE: float = 0.3     # temperature for summary generation
-    SAVE_SUMMARIES_TO_FILES: bool = False # save summaries as text files in summaries/ folder
-    MAX_INPUT_TEXT_TOKENS: int = 8000    # maximum input text length before summarization (truncates long articles)
+    SAVE_SUMMARIES_TO_FILES: bool = True # save summaries as text files in summaries/ folder
+    MAX_INPUT_TEXT_TOKENS: int = 6000    # maximum input text length before summarization (truncates long articles)
     
     # === CSV SCRAPING ===
     ENABLE_CSV_SCRAPING: bool = True      # enable table extraction from wiki articles
-    SAVE_CSV_FILES_FOR_DEBUG: bool = False # save CSV files to disk (for debugging only)
+    SAVE_CSV_FILES_FOR_DEBUG: bool = True # save CSV files to disk (for debugging only)
     CSV_REQUEST_DELAY: float = 1.0         # delay between requests to avoid rate limiting
     
     # === CSV TO TEXT CONVERSION ===
     ENABLE_CSV_TO_TEXT: bool = True     # enable CSV to text conversion using LLM
     CSV_TO_TEXT_MODEL: str = "gpt-4o-mini"  # OpenAI model for CSV conversion
     CSV_TO_TEXT_TEMPERATURE: float = 0.2     # temperature for CSV conversion (lower for consistency)
-    SAVE_CSV_TO_TEXT_FILES: bool = False     # save converted text as files in data/debug/csv2text/ folder
+    SAVE_CSV_TO_TEXT_FILES: bool = True     # save converted text as files in data/debug/csv2text/ folder
     
     # === API RETRY SETTINGS ===
     API_MAX_RETRIES: int = 3               # maximum API retry attempts
@@ -83,7 +83,38 @@ class RAGConfig:
     API_RETRY_EXPONENTIAL: bool = True     # use exponential backoff for retries
     
     # === ARTICLES TO SCRAPE ===
-    ARTICLES_TO_SCRAPE: List[str] = field(default_factory=lambda: ["Arabasta Kingdom"])  # list of One Piece Wiki articles to scrape
+    ARTICLES_TO_SCRAPE: List[str] = field(default_factory=lambda: [
+    "Monkey D. Luffy",
+    "Roronoa Zoro",
+    "Nami",
+    "Usopp",
+    "Sanji",
+    "Straw Hat Pirates",
+    "Shanks",
+    "Buggy",
+    "Kuro",
+    "Don Krieg",
+    "Arlong",
+    "Alvida",
+    "Koby",
+    "Helmeppo",
+    "Morgan",
+    "Smoker",
+    "Marines",
+    "East Blue",
+    "Foosha Village",
+    "Shells Town",
+    "Orange Town",
+    "Syrup Village",
+    "Baratie",
+    "Arlong Park",
+    "Loguetown",
+    "Gol D. Roger",
+    "Portgas D. Rouge",
+    "Pirate King",
+    "Grand Line",
+    "Devil Fruit"
+])  # list of One Piece Wiki articles to scrape
     
     def __post_init__(self):
         """Initialize default values that can't be set in dataclass"""
