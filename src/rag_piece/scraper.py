@@ -333,7 +333,7 @@ class OneWikiScraper:
         """Get detailed information about an image."""
         try:
             # Filter out "Featured Article" images
-            if "Featured Article" in image_name:
+            if "Featured_Article" in image_name:
                 return None
             
             params = {

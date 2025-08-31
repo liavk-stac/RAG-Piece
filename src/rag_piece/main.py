@@ -185,23 +185,33 @@ def _process_articles(text_scraper: OneWikiScraper, csv_scraper: CSVWikiScraper,
         try:
             logger.info(f"Processing article: {article_name}")
             
+            # Initialize CSV variables with safe defaults first
+            dataframes = []
+            csv_files = []
+            csv_metadata = {}
+            
             # Run both scrapers in parallel
             logger.info("Running text and image scraper...")
             sections, text_metadata = text_scraper.scrape_article(article_name)
             
             logger.info("Running CSV scraper...")
-            if rag_db.config.ENABLE_CSV_SCRAPING:
-                if rag_db.config.SAVE_CSV_FILES_FOR_DEBUG:
-                    # Use traditional CSV file creation for debugging
-                    csv_files, csv_metadata = csv_scraper.scrape_article_to_csv(article_name)
+            try:
+                if rag_db.config.ENABLE_CSV_SCRAPING:
+                    if rag_db.config.SAVE_CSV_FILES_FOR_DEBUG:
+                        # Use traditional CSV file creation for debugging
+                        csv_files, csv_metadata = csv_scraper.scrape_article_to_csv(article_name)
+                    else:
+                        # Use new in-memory approach (preferred)
+                        dataframes, csv_metadata = csv_scraper.extract_tables_in_memory(article_name)
+                        csv_files = []  # No CSV files created
                 else:
-                    # Use new in-memory approach (preferred)
-                    dataframes, csv_metadata = csv_scraper.extract_tables_in_memory(article_name)
-                    csv_files = []  # No CSV files created
-            else:
-                csv_files, csv_metadata = [], {}
-                dataframes = []
-            
+                    csv_files, csv_metadata = [], {}
+                    dataframes = []
+            except Exception as e:
+                logger.error(f"CSV processing failed for {article_name}: {e}")
+                # Keep safe defaults if CSV processing fails
+                csv_files, csv_metadata, dataframes = [], {}, []
+                
             if sections:
                 # PARALLEL PROCESSING: Content chunking and summarization happen simultaneously
                 logger.info("Processing content and generating summaries in parallel...")

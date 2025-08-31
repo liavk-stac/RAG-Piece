@@ -64,7 +64,7 @@ class RAGConfig:
     SUMMARY_MODEL: str = "gpt-4o-mini"  # OpenAI model for summarization
     SUMMARY_TEMPERATURE: float = 0.3     # temperature for summary generation
     SAVE_SUMMARIES_TO_FILES: bool = True # save summaries as text files in summaries/ folder
-    MAX_INPUT_TEXT_TOKENS: int = 6000    # maximum input text length before summarization (truncates long articles)
+    MAX_INPUT_TEXT_TOKENS: int = 5000    # maximum input text length before summarization (truncates long articles)
     
     # === CSV SCRAPING ===
     ENABLE_CSV_SCRAPING: bool = True      # enable table extraction from wiki articles
