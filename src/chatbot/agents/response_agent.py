@@ -242,7 +242,11 @@ I searched the One Piece database for information about "{query}", but I couldn'
         
         system_message = """You are a One Piece knowledge expert. Synthesize information from multiple sources 
         to create a comprehensive, accurate, and engaging response. Be true to One Piece lore and provide 
-        detailed, well-structured information."""
+        detailed, well-structured information. 
+        
+        IMPORTANT: If the context mentions "Image Display: Showing image", you MUST inform the user that an image 
+        is being displayed alongside your response (e.g., "I'm displaying an image of [character/scene] for you" 
+        or "Here's an image showing [description]")."""
         
         prompt = f"""User Query: {input_data.query}
 
@@ -251,10 +255,12 @@ Available Information:
 
 Please synthesize this information into a comprehensive response that:
 1. Directly answers the user's question
-2. Incorporates relevant details from all available sources
+2. Answer the user's question based only on the information provided above
 3. Maintains One Piece lore accuracy
 4. Is well-structured and easy to read
 5. Includes confidence level in the information provided
+6. Try to make the answer concise and to the point (no more then a paragraph)
+7. If an image is being displayed (mentioned in context), inform the user about it
 
 Response:"""
         
@@ -816,13 +822,21 @@ Response:"""
             if results:
                 context_parts.append(f"Search Results ({len(results)} found):")
                 for i, result in enumerate(results[:3]):  # Top 3 results
-                    content = result.get('content', '')[:150] + "..." if len(result.get('content', '')) > 150 else result.get('content', '')
+                    content = result.get('content', '')
                     context_parts.append(f"  {i+1}. {content}")
         
         # Add image analysis summary
         image_info = agent_outputs.get('image_analysis', {})
         if image_info and 'description' in image_info:
             context_parts.append(f"Image Analysis: {image_info['description']}")
+        
+        # Add image retrieval summary
+        image_retrieval_info = agent_outputs.get('image_retrieval', {})
+        if image_retrieval_info and image_retrieval_info.get('success') and image_retrieval_info.get('image'):
+            image_data = image_retrieval_info['image']
+            filename = image_data.get('filename', 'unknown')
+            relevance_score = image_data.get('relevance_score', 0.0)
+            context_parts.append(f"Image Display: Showing image '{filename}' (relevance: {relevance_score:.2f}) - inform the user that an image is being displayed")
         
         # Add reasoning summary
         reasoning_info = agent_outputs.get('reasoning', {})

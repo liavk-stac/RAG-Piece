@@ -84,7 +84,7 @@ class RAGConfig:
     
     # === ARTICLES TO SCRAPE ===
     ARTICLES_TO_SCRAPE: List[str] = field(default_factory=lambda: [
-    "Don Krieg"
+    "Alvida"
 ])  # list of One Piece Wiki articles to scrape
     
     def __post_init__(self):

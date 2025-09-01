@@ -66,7 +66,7 @@ class ChatbotConfig:
     # === IMAGE RETRIEVAL SETTINGS ===
     IMAGES_PATH: str = "data/images"  # Path to images directory
     IMAGE_INDEX_PATH: str = "data/image_index.pkl"  # Path to image index file
-    IMAGE_RELEVANCE_THRESHOLD: float = 0.6  # Minimum relevance score for image selection
+    IMAGE_RELEVANCE_THRESHOLD: float = 0.3  # Minimum relevance score for image selection
     ENABLE_IMAGE_RETRIEVAL: bool = True  # Enable image retrieval functionality
     
     # === LLM MODEL SETTINGS ===

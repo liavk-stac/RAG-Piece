@@ -9,11 +9,10 @@ import logging
 from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Any, Optional
-import unicodedata
 from PIL import Image
 import io
 
-from .utils import slugify, safe_file_operation
+from .utils import slugify
 
 
 class OneWikiScraper:
@@ -89,7 +88,7 @@ class OneWikiScraper:
         try:
             max_retries = getattr(self, 'config', None) and getattr(self.config, 'API_MAX_RETRIES', 3) or 3
             base_delay = getattr(self, 'config', None) and getattr(self.config, 'API_BASE_DELAY', 2.0) or 2.0
-        except:
+        except AttributeError:
             max_retries = 3
             base_delay = 2.0
         
@@ -190,12 +189,13 @@ class OneWikiScraper:
     def _scrape_single_article(self, article_name: str) -> tuple[List[Dict], List[Dict]]:
         """Scrape a single article."""
         try:
-            # Get article content
+            # Get article content with redirect following
             parse_params = {
                 'action': 'parse',
                 'format': 'json',
                 'page': article_name,
-                'prop': 'text|images|sections'
+                'prop': 'text|images|sections',
+                'redirects': 1  # Follow redirects automatically
             }
             
             response = self._make_api_request(parse_params)
@@ -207,6 +207,14 @@ class OneWikiScraper:
             
             if not html_content:
                 return [], []
+            
+            # Check if this is still a redirect page (some redirects don't get followed)
+            if self._is_redirect_page(html_content):
+                self.logger.warning(f"Article {article_name} appears to be a redirect page - trying to extract redirect target")
+                redirect_target = self._extract_redirect_target(html_content)
+                if redirect_target and redirect_target != article_name:
+                    self.logger.info(f"Following redirect from {article_name} to {redirect_target}")
+                    return self._scrape_single_article(redirect_target)
             
             # Extract sections and images
             sections = self._extract_sections(html_content, article_name)
@@ -221,19 +229,22 @@ class OneWikiScraper:
     def _extract_sections(self, html_content: str, article_name: str) -> List[Dict[str, str]]:
         """Extract sections from HTML content."""
         try:
-            # Clean the HTML content
-            cleaned_content = self._clean_html_content(html_content)
+            # First, extract the main article content and filter out unwanted elements
+            filtered_html = self._filter_main_content(html_content)
             
-            # Split into sections based on headings
-            sections = self._split_into_sections(cleaned_content)
+            # Split into sections based on headings BEFORE cleaning HTML
+            sections = self._split_into_sections(filtered_html)
             
             # Process each section
             processed_sections = []
             for i, (title, content) in enumerate(sections):
-                if self._is_valid_section(title, content):
+                # Clean the content for this section
+                cleaned_content = self._clean_html_content(content)
+                
+                if self._is_valid_section(title, cleaned_content):
                     section_data = {
                         'combined_title': title or f"Section {i+1}",
-                        'content': content,
+                        'content': cleaned_content,
                         'article_source': article_name,
                         'section_index': i
                     }
@@ -245,31 +256,166 @@ class OneWikiScraper:
             self.logger.error(f"Error extracting sections: {e}", exc_info=True)
             return []
     
+    def _filter_main_content(self, html_content: str) -> str:
+        """Filter HTML to extract only main article content, removing navigation and unwanted elements."""
+        try:
+            from bs4 import BeautifulSoup
+            
+            soup = BeautifulSoup(html_content, 'html.parser')
+            
+            # Remove unwanted elements that contain navigation, character lists, etc.
+            unwanted_selectors = [
+                # Navigation and site elements
+                '.navbox', '.navigation-box', '.nav', '.site-navigation',
+                '.mw-navigation', '.portal', '.portlet',
+                
+                # References and citations
+                '.references', '.citation', '.reference', '.mw-references-wrap',
+                '.reflist', '.mw-cite-backlink',
+                
+                # Images and media (we handle these separately)
+                '.thumb', '.thumbinner', '.thumbcaption', 
+                
+                # Infoboxes and tables (we might want these, but they often contain character lists)
+                '.infobox', '.wikitable', '.character-list', '.bounty-list',
+                
+                # Edit sections and tools
+                '.mw-editsection', '.edit-section',
+                
+                # Categories and templates
+                '.category-links', '.template',
+                
+                # Specific One Piece Wiki elements
+                '.weaponed-fighters', '.individuals-with-bounties',
+                
+                # IDs
+                '#references', '#References', '#External_links', '#See_also',
+                '#Navigation', '#Site_Navigation'
+            ]
+            
+            # Remove unwanted elements
+            for selector in unwanted_selectors:
+                for element in soup.select(selector):
+                    element.decompose()
+            
+            # Try to find the main content area
+            main_content = None
+            
+            # Look for common main content containers
+            main_selectors = [
+                '.mw-parser-output',  # MediaWiki main content
+                '.article-content',
+                '.page-content',
+                '#content',
+                '#mw-content-text'
+            ]
+            
+            for selector in main_selectors:
+                main_content = soup.select_one(selector)
+                if main_content:
+                    break
+            
+            # If no main content container found, use the entire soup
+            if not main_content:
+                main_content = soup
+            
+            return str(main_content)
+            
+        except ImportError:
+            # Fallback: remove common unwanted patterns with regex
+            self.logger.warning("BeautifulSoup not available, using regex fallback for content filtering")
+            return self._filter_main_content_regex(html_content)
+        except Exception as e:
+            self.logger.error(f"Error filtering main content: {e}")
+            return html_content  # Return original if filtering fails
+    
+    def _filter_main_content_regex(self, html_content: str) -> str:
+        """Regex-based fallback for filtering main content."""
+        # Remove navigation boxes
+        html_content = re.sub(r'<div[^>]*class="[^"]*navbox[^"]*"[^>]*>.*?</div>', '', html_content, flags=re.DOTALL | re.IGNORECASE)
+        
+        # Remove reference sections
+        html_content = re.sub(r'<div[^>]*class="[^"]*references[^"]*"[^>]*>.*?</div>', '', html_content, flags=re.DOTALL | re.IGNORECASE)
+        
+        # Remove infoboxes (they often contain character lists)
+        html_content = re.sub(r'<table[^>]*class="[^"]*infobox[^"]*"[^>]*>.*?</table>', '', html_content, flags=re.DOTALL | re.IGNORECASE)
+        
+        return html_content
+    
     def _clean_html_content(self, html_content: str) -> str:
-        """Clean HTML content by removing unwanted elements."""
+        """Clean HTML content and convert to plain text."""
+        try:
+            from bs4 import BeautifulSoup
+            
+            # Parse HTML with BeautifulSoup
+            soup = BeautifulSoup(html_content, 'html.parser')
+            
+            # Remove unwanted elements
+            unwanted_tags = [
+                'script', 'style', 'noscript', 'nav', 'footer', 'header',
+                'aside', 'figure', 'figcaption', 'sup', 'sub'
+            ]
+            for tag in unwanted_tags:
+                for element in soup.find_all(tag):
+                    element.decompose()
+            
+            # Remove elements with specific classes/ids
+            unwanted_selectors = [
+                '.navbox', '.references', '.citation', '.reference',
+                '.mw-references-wrap', '.reflist', '.thumb', '.thumbinner',
+                '.thumbcaption', '.infobox', '.wikitable', '.mw-editsection',
+                '#references', '#References', '.mw-cite-backlink'
+            ]
+            for selector in unwanted_selectors:
+                for element in soup.select(selector):
+                    element.decompose()
+            
+            # Convert to text
+            text = soup.get_text()
+            
+            # Clean up text
+            # Remove multiple whitespaces and newlines
+            text = re.sub(r'\s+', ' ', text)
+            
+            # Remove bibliography references like [1], [2], [1-5], etc.
+            text = re.sub(r'\[[\d\s,\-]+\]', '', text)
+            
+            # Remove extra spacing around punctuation
+            text = re.sub(r'\s+([.,:;!?])', r'\1', text)
+            
+            # Clean up multiple spaces
+            text = ' '.join(text.split())
+            
+            return text.strip()
+            
+        except ImportError:
+            # Fallback to regex-based cleaning if BeautifulSoup not available
+            return self._clean_html_content_regex(html_content)
+        except Exception as e:
+            self.logger.error(f"Error cleaning HTML content: {e}")
+            return self._clean_html_content_regex(html_content)
+    
+    def _clean_html_content_regex(self, html_content: str) -> str:
+        """Fallback regex-based HTML cleaning."""
         # Remove script and style tags
         html_content = re.sub(r'<script[^>]*>.*?</script>', '', html_content, flags=re.DOTALL | re.IGNORECASE)
         html_content = re.sub(r'<style[^>]*>.*?</style>', '', html_content, flags=re.DOTALL | re.IGNORECASE)
         
-        # Remove navigation and reference sections
-        skip_patterns = [
-            r'<div[^>]*class="[^"]*navbox[^"]*"[^>]*>.*?</div>',
-            r'<div[^>]*class="[^"]*references[^"]*"[^>]*>.*?</div>',
-            r'<div[^>]*id="[^"]*references[^"]*"[^>]*>.*?</div>'
-        ]
-        
-        for pattern in skip_patterns:
-            html_content = re.sub(pattern, '', html_content, flags=re.DOTALL | re.IGNORECASE)
+        # Remove all HTML tags
+        html_content = re.sub(r'<[^>]+>', '', html_content)
         
         # Remove bibliography labels
-        html_content = re.sub(r'\[[\d\s,]+\]', '', html_content)
+        html_content = re.sub(r'\[[\d\s,\-]+\]', '', html_content)
         
-        return html_content
+        # Clean up whitespace
+        html_content = re.sub(r'\s+', ' ', html_content)
+        
+        return html_content.strip()
     
     def _split_into_sections(self, content: str) -> List[tuple[str, str]]:
         """Split content into sections based on headings."""
         # Find all headings (h2, h3, h4)
-        heading_pattern = r'<h([2-4])[^>]*>(.*?)</h\1>'
+        heading_pattern = r'<h([2-4])[^>]*?id="([^"]*)"[^>]*>(.*?)</h\1>|<h([2-4])[^>]*>(.*?)</h\4>'
         headings = list(re.finditer(heading_pattern, content, re.IGNORECASE | re.DOTALL))
         
         if not headings:
@@ -279,9 +425,18 @@ class OneWikiScraper:
         sections = []
         
         for i, heading_match in enumerate(headings):
-            # Extract heading title
-            heading_html = heading_match.group(2)
+            # Extract heading title (handle both patterns: with and without id)
+            if heading_match.group(3):  # Pattern with id
+                heading_html = heading_match.group(3)
+            else:  # Pattern without id
+                heading_html = heading_match.group(5)
+            
+            # Clean heading title
             heading_title = re.sub(r'<[^>]+>', '', heading_html).strip()
+            
+            # Skip edit links and other unwanted headings
+            if '[edit]' in heading_title.lower() or 'edit' in heading_title.lower():
+                heading_title = re.sub(r'\[edit\]', '', heading_title, flags=re.IGNORECASE).strip()
             
             # Extract content between this heading and the next
             start_pos = heading_match.end()
@@ -289,7 +444,7 @@ class OneWikiScraper:
             
             section_content = content[start_pos:end_pos].strip()
             
-            if section_content:
+            if section_content and heading_title:
                 sections.append((heading_title, section_content))
         
         return sections
@@ -299,18 +454,40 @@ class OneWikiScraper:
         if not content or not content.strip():
             return False
         
-        # Skip navigation and reference sections
+        # Skip navigation, reference, and list sections
         skip_titles = [
             'site navigation', 'references', 'external links', 'see also',
-            'navigation', 'navbox', 'categories'
+            'navigation', 'navbox', 'categories', 'gallery', 'trivia',
+            'weaponed fighters', 'individuals with bounties', 'bounties',
+            'related articles', 'template', 'templates'
         ]
         
         if title and any(skip in title.lower() for skip in skip_titles):
             return False
         
+        # Skip sections that are mostly character lists (lots of names separated by spaces)
+        words = content.split()
+        if len(words) > 20:  # Only check longer content
+            # Count capitalized words (likely character names)
+            capitalized_words = [w for w in words if w and w[0].isupper() and len(w) > 2]
+            capitalized_ratio = len(capitalized_words) / len(words)
+            
+            # If more than 60% of words are capitalized, it's likely a character list
+            if capitalized_ratio > 0.6:
+                self.logger.debug(f"Skipping section '{title}' - appears to be a character list (capitalized ratio: {capitalized_ratio:.2f})")
+                return False
+        
         # Must have minimum content length
-        if len(content.strip()) < 50:
+        if len(content.strip()) < 100:  # Increased minimum length
             return False
+        
+        # Skip sections with very short sentences (likely lists)
+        sentences = [s.strip() for s in content.split('.') if s.strip()]
+        if len(sentences) > 3:  # Only check if we have multiple sentences
+            avg_sentence_length = sum(len(s.split()) for s in sentences) / len(sentences)
+            if avg_sentence_length < 5:  # Very short sentences suggest lists
+                self.logger.debug(f"Skipping section '{title}' - appears to be a list (avg sentence length: {avg_sentence_length:.1f} words)")
+                return False
         
         return True
     
@@ -438,6 +615,34 @@ class OneWikiScraper:
         
         pages = response.get('query', {}).get('pages', {})
         return not any('-1' in str(page_id) for page_id in pages.keys())
+    
+    def _is_redirect_page(self, html_content: str) -> bool:
+        """Check if the HTML content represents a redirect page."""
+        # Look for redirect indicators in the HTML
+        redirect_indicators = [
+            'class="redirectMsg"',
+            'class="redirectText"',
+            'Redirect to:',
+            '<p>Redirect to:</p>'
+        ]
+        return any(indicator in html_content for indicator in redirect_indicators)
+    
+    def _extract_redirect_target(self, html_content: str) -> Optional[str]:
+        """Extract the redirect target from HTML content."""
+        try:
+            # Look for redirect link in the HTML
+            import re
+            # Pattern to find redirect links like: <a href="/wiki/TARGET" title="TARGET">TARGET</a>
+            redirect_pattern = r'<a href="/wiki/([^"]+)" title="[^"]*">([^<]+)</a>'
+            match = re.search(redirect_pattern, html_content)
+            if match:
+                # Return the link target (group 1) with URL decoding
+                target = match.group(1).replace('_', ' ')
+                return target
+            return None
+        except Exception as e:
+            self.logger.error(f"Error extracting redirect target: {e}")
+            return None
     
     def _generate_content_key(self, content: str) -> str:
         """Generate a key for content deduplication."""
