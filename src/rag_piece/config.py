@@ -84,7 +84,28 @@ class RAGConfig:
     
     # === ARTICLES TO SCRAPE ===
     ARTICLES_TO_SCRAPE: List[str] = field(default_factory=lambda: [
-    "Alvida"
+    "Monkey D. Luffy",
+    "Roronoa Zoro",
+    "Nami",
+    "Usopp",
+    "Sanji",
+    "Straw Hat Pirates",
+    "Shanks",
+    "Buggy",
+    "Kuro",
+    "Don Krieg",
+    "Arlong",
+    "Alvida",
+    "Koby",
+    "Helmeppo",
+    "Morgan",
+    "Smoker",
+    "Marines",
+    "East Blue",
+    "Gol D. Roger",
+    "Pirate King",
+    "Grand Line",
+    "Devil Fruit"
 ])  # list of One Piece Wiki articles to scrape
     
     def __post_init__(self):
