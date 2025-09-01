@@ -98,7 +98,14 @@ class ChatbotOrchestrator:
             agents['search'] = SearchAgent(self.config)
             agents['reasoning'] = ReasoningAgent(self.config)
             agents['image_analysis'] = ImageAnalysisAgent(self.config)
-            agents['image_retrieval'] = ImageRetrievalAgent(self.config)
+            
+            # Conditionally initialize image retrieval agent
+            if self.config.ENABLE_IMAGE_RETRIEVAL_AGENT:
+                agents['image_retrieval'] = ImageRetrievalAgent(self.config)
+                self.logger.info("Image retrieval agent enabled")
+            else:
+                self.logger.info("Image retrieval agent disabled")
+            
             agents['response'] = ResponseAgent(self.config)
             agents['timeline'] = TimelineAgent(self.config)
             
@@ -256,6 +263,11 @@ class ChatbotOrchestrator:
             for agent_name in execution_order:
                 if agent_name == 'router':
                     continue  # Already executed
+                
+                # Skip agents that are not initialized (e.g., disabled image_retrieval)
+                if agent_name not in self.agents:
+                    self.logger.info(f"Skipping {agent_name} agent (not initialized)")
+                    continue
                 
                 self.logger.info(f"Executing {agent_name} agent")
                 

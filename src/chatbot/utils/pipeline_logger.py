@@ -118,6 +118,9 @@ class PipelineLogger:
     
     def log_agent_start(self, agent_name: str, operation: str, input_data: Optional[Dict[str, Any]] = None):
         """Log the start of an agent execution."""
+        if not self.config.ENABLE_PIPELINE_LOGGING:
+            return
+            
         self.logger.info(f"[AGENT] AGENT START - {agent_name.upper()} | Operation: {operation}")
         
         if input_data:
@@ -129,6 +132,9 @@ class PipelineLogger:
     def log_agent_end(self, agent_name: str, operation: str, output_data: Optional[Dict[str, Any]] = None, 
                       execution_time: float = 0.0, success: bool = True):
         """Log the end of an agent execution."""
+        if not self.config.ENABLE_PIPELINE_LOGGING:
+            return
+            
         status = "[SUCCESS]" if success else "[FAILED]"
         self.logger.info(f"[AGENT] AGENT END - {agent_name.upper()} | {status} | Time: {execution_time:.2f}s")
         
@@ -141,6 +147,8 @@ class PipelineLogger:
     def log_llm_call(self, agent_name: str, operation: str, prompt: str, response: str, 
                      model: str, tokens_used: Optional[int] = None, execution_time: float = 0.0):
         """Log an LLM API call with full details."""
+        if not self.config.ENABLE_PIPELINE_LOGGING:
+            return
         self.logger.info(f"[LLM] LLM CALL - {agent_name.upper()} | {operation} | Model: {model} | Time: {execution_time:.2f}s")
         
         if self.config.ENABLE_LLM_CALL_LOGGING:
@@ -178,6 +186,8 @@ class PipelineLogger:
     
     def log_llm_call(self, agent_name: str, prompt: str, response: str, tokens_used: int, system_message: str = ""):
         """Log complete LLM API call details."""
+        if not self.config.ENABLE_PIPELINE_LOGGING:
+            return
         self.logger.info(f"[LLM] {agent_name.upper()} LLM CALL:")
         
         if system_message:
@@ -295,6 +305,9 @@ class PipelineLogger:
     
     def log_pipeline_output(self, final_response: Dict[str, Any], all_agent_outputs: Dict[str, Any]):
         """Log complete pipeline final output."""
+        if not self.config.ENABLE_PIPELINE_LOGGING:
+            return
+            
         self.logger.info(f"[PIPELINE] COMPLETE PIPELINE OUTPUT:")
         self.logger.info(f"[PIPELINE] Final Response: {json.dumps(final_response, indent=2, ensure_ascii=False)}")
         self.logger.info(f"[PIPELINE] All Agent Outputs: {json.dumps(all_agent_outputs, indent=2, ensure_ascii=False)}")

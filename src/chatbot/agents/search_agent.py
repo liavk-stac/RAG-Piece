@@ -288,7 +288,7 @@ class SearchAgent(BaseAgent):
 
 Please enhance this query for searching a One Piece knowledge database. Consider:
 1. Adding relevant One Piece character names, locations, or terms
-2. Including synonyms or alternative names
+2. Including many many synonyms or alternative names
 3. Adding context if the query seems generic
 4. Maintaining the original intent while improving searchability
 

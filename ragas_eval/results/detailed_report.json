@@ -1,0 +1,570 @@
+{
+  "evaluation_summary": {
+    "timestamp": "2025-09-01T16:09:40.243667",
+    "total_questions": 20,
+    "evaluation_time": 73.97765946388245,
+    "metrics_evaluated": [
+      "answer_correctness",
+      "context_precision",
+      "context_recall",
+      "faithfulness"
+    ]
+  },
+  "overall_scores": {
+    "answer_correctness": 0.6286414494603263,
+    "context_precision": 0.0,
+    "context_recall": 0.0,
+    "faithfulness": 0.0
+  },
+  "performance_insights": {
+    "overall_performance": {
+      "average_score": 0.15716036236508157,
+      "performance_level": "Poor",
+      "total_questions": 20
+    },
+    "category_insights": {
+      "relationships": {
+        "average_score": 0.10108902093329064,
+        "question_count": 4,
+        "performance_level": "Poor",
+        "best_metric": "Answer Correctness",
+        "worst_metric": "Context Precision"
+      },
+      "character_abilities": {
+        "average_score": 0.1530938469422494,
+        "question_count": 6,
+        "performance_level": "Poor",
+        "best_metric": "Answer Correctness",
+        "worst_metric": "Context Precision"
+      },
+      "story_events": {
+        "average_score": 0.19291857634964651,
+        "question_count": 5,
+        "performance_level": "Poor",
+        "best_metric": "Answer Correctness",
+        "worst_metric": "Context Precision"
+      },
+      "multi_character": {
+        "average_score": 0.1977565195690063,
+        "question_count": 2,
+        "performance_level": "Poor",
+        "best_metric": "Answer Correctness",
+        "worst_metric": "Context Precision"
+      },
+      "world_building": {
+        "average_score": 0.15339405367624248,
+        "question_count": 3,
+        "performance_level": "Poor",
+        "best_metric": "Answer Correctness",
+        "worst_metric": "Context Precision"
+      }
+    },
+    "metric_analysis": {
+      "answer_correctness": {
+        "score": 0.6286414494603263,
+        "performance_level": "Needs Improvement",
+        "interpretation": "Answers are mostly correct but may lack some details"
+      },
+      "context_precision": {
+        "score": 0.0,
+        "performance_level": "Poor",
+        "interpretation": "Many retrieved contexts are irrelevant or off-topic"
+      },
+      "context_recall": {
+        "score": 0.0,
+        "performance_level": "Poor",
+        "interpretation": "System misses important information needed for complete answers"
+      },
+      "faithfulness": {
+        "score": 0.0,
+        "performance_level": "Poor",
+        "interpretation": "Answers contain significant hallucinations or unsupported information"
+      }
+    },
+    "improvement_areas": [
+      "Improve answer correctness (score: 0.629)",
+      "Improve context precision (score: 0.000)",
+      "Improve context recall (score: 0.000)",
+      "Improve faithfulness (score: 0.000)"
+    ],
+    "strengths": []
+  },
+  "recommendations": [
+    "🎯 Overall system performance needs significant improvement. Focus on the lowest-scoring metrics first.",
+    "🔍 Improve context precision by refining search algorithms and relevance scoring.",
+    "📚 Enhance context recall by increasing search result limits and improving query expansion.",
+    "🛡️ Reduce hallucinations by improving prompt engineering and context utilization.",
+    "✅ Improve answer accuracy by enhancing knowledge base quality and response generation.",
+    "📖 Focus on improving relationships questions - lowest performing category.",
+    "🔄 Consider expanding the evaluation dataset with more diverse questions.",
+    "📊 Monitor performance over time to track improvements.",
+    "🧪 A/B test different system configurations based on these insights."
+  ],
+  "detailed_results": {
+    "per_question_results": [
+      {
+        "question_id": 1,
+        "question": "What are Monkey D. Luffy's Devil Fruit powers and how do they work?",
+        "category": "character_abilities",
+        "difficulty": "easy",
+        "scores": {
+          "answer_correctness": 0.7529002932174989,
+          "context_precision": 0.0,
+          "context_recall": 0.0,
+          "faithfulness": 0.0
+        }
+      },
+      {
+        "question_id": 2,
+        "question": "What fighting style and weapons does Roronoa Zoro use?",
+        "category": "character_abilities",
+        "difficulty": "easy",
+        "scores": {
+          "answer_correctness": 0.5874015935174701,
+          "context_precision": 0.0,
+          "context_recall": 0.0,
+          "faithfulness": 0.0
+        }
+      },
+      {
+        "question_id": 3,
+        "question": "What are Sanji's fighting abilities and cooking skills?",
+        "category": "character_abilities",
+        "difficulty": "easy",
+        "scores": {
+          "answer_correctness": 0.44022616611403154,
+          "context_precision": 0.0,
+          "context_recall": 0.0,
+          "faithfulness": 0.0
+        }
+      },
+      {
+        "question_id": 4,
+        "question": "What are Don Krieg's weapons and armor capabilities?",
+        "category": "character_abilities",
+        "difficulty": "medium",
+        "scores": {
+          "answer_correctness": 0.6647053461411833,
+          "context_precision": 0.0,
+          "context_recall": 0.0,
+          "faithfulness": 0.0
+        }
+      },
+      {
+        "question_id": 5,
+        "question": "What are Arlong's abilities as a Fish-man?",
+        "category": "character_abilities",
+        "difficulty": "easy",
+        "scores": {
+          "answer_correctness": 0.5188209071695731,
+          "context_precision": 0.0,
+          "context_recall": 0.0,
+          "faithfulness": 0.0
+        }
+      },
+      {
+        "question_id": 6,
+        "question": "What Devil Fruit power does Alvida have and what does it do?",
+        "category": "character_abilities",
+        "difficulty": "easy",
+        "scores": {
+          "answer_correctness": 0.7101980204542283,
+          "context_precision": 0.0,
+          "context_recall": 0.0,
+          "faithfulness": 0.0
+        }
+      },
+      {
+        "question_id": 7,
+        "question": "How did Luffy first meet and recruit Zoro?",
+        "category": "story_events",
+        "difficulty": "easy",
+        "scores": {
+          "answer_correctness": 0.731593263423827,
+          "context_precision": 0.0,
+          "context_recall": 0.0,
+          "faithfulness": 0.0
+        }
+      },
+      {
+        "question_id": 8,
+        "question": "What happened during Luffy's battle with Captain Kuro?",
+        "category": "story_events",
+        "difficulty": "medium",
+        "scores": {
+          "answer_correctness": 0.4955894220044263,
+          "context_precision": 0.0,
+          "context_recall": 0.0,
+          "faithfulness": 0.0
+        }
+      },
+      {
+        "question_id": 9,
+        "question": "How did the Straw Hats encounter and defeat Arlong?",
+        "category": "story_events",
+        "difficulty": "medium",
+        "scores": {
+          "answer_correctness": 0.8648582579886459,
+          "context_precision": 0.0,
+          "context_recall": 0.0,
+          "faithfulness": 0.0
+        }
+      },
+      {
+        "question_id": 10,
+        "question": "What was the outcome of Don Krieg's encounter with Dracule Mihawk?",
+        "category": "story_events",
+        "difficulty": "medium",
+        "scores": {
+          "answer_correctness": 0.8299513925545883,
+          "context_precision": 0.0,
+          "context_recall": 0.0,
+          "faithfulness": 0.0
+        }
+      },
+      {
+        "question_id": 11,
+        "question": "How did Shanks influence Luffy's decision to become a pirate?",
+        "category": "story_events",
+        "difficulty": "easy",
+        "scores": {
+          "answer_correctness": 0.9363791910214425,
+          "context_precision": 0.0,
+          "context_recall": 0.0,
+          "faithfulness": 0.0
+        }
+      },
+      {
+        "question_id": 12,
+        "question": "What is the relationship between Koby and Luffy?",
+        "category": "relationships",
+        "difficulty": "easy",
+        "scores": {
+          "answer_correctness": 0.5074373357959887,
+          "context_precision": 0.0,
+          "context_recall": 0.0,
+          "faithfulness": 0.0
+        }
+      },
+      {
+        "question_id": 13,
+        "question": "How are Helmeppo and Morgan related?",
+        "category": "relationships",
+        "difficulty": "easy",
+        "scores": {
+          "answer_correctness": 0.3177921468339698,
+          "context_precision": 0.0,
+          "context_recall": 0.0,
+          "faithfulness": 0.0
+        }
+      },
+      {
+        "question_id": 14,
+        "question": "What is the connection between Buggy and Gol D. Roger?",
+        "category": "relationships",
+        "difficulty": "medium",
+        "scores": {
+          "answer_correctness": 0.48013273408499324,
+          "context_precision": 0.0,
+          "context_recall": 0.0,
+          "faithfulness": 0.0
+        }
+      },
+      {
+        "question_id": 15,
+        "question": "How did Nami become part of the Straw Hat Pirates?",
+        "category": "relationships",
+        "difficulty": "medium",
+        "scores": {
+          "answer_correctness": 0.3120621182176986,
+          "context_precision": 0.0,
+          "context_recall": 0.0,
+          "faithfulness": 0.0
+        }
+      },
+      {
+        "question_id": 16,
+        "question": "What is the East Blue and why is it significant?",
+        "category": "world_building",
+        "difficulty": "easy",
+        "scores": {
+          "answer_correctness": 0.6109611211180986,
+          "context_precision": 0.0,
+          "context_recall": 0.0,
+          "faithfulness": 0.0
+        }
+      },
+      {
+        "question_id": 17,
+        "question": "What are the Marines and what is their role?",
+        "category": "world_building",
+        "difficulty": "easy",
+        "scores": {
+          "answer_correctness": 0.42733899415352977,
+          "context_precision": 0.0,
+          "context_recall": 0.0,
+          "faithfulness": 0.0
+        }
+      },
+      {
+        "question_id": 18,
+        "question": "What is the Grand Line and why do pirates want to go there?",
+        "category": "world_building",
+        "difficulty": "medium",
+        "scores": {
+          "answer_correctness": 0.8024285288432813,
+          "context_precision": 0.0,
+          "context_recall": 0.0,
+          "faithfulness": 0.0
+        }
+      },
+      {
+        "question_id": 19,
+        "question": "Compare the leadership styles of Luffy and Don Krieg as pirate captains.",
+        "category": "multi_character",
+        "difficulty": "hard",
+        "scores": {
+          "answer_correctness": 0.9170988731244915,
+          "context_precision": 0.0,
+          "context_recall": 0.0,
+          "faithfulness": 0.0
+        }
+      },
+      {
+        "question_id": 20,
+        "question": "How do the dreams of the main Straw Hat Pirates connect to their roles on the ship?",
+        "category": "multi_character",
+        "difficulty": "hard",
+        "scores": {
+          "answer_correctness": 0.6649532834275589,
+          "context_precision": 0.0,
+          "context_recall": 0.0,
+          "faithfulness": 0.0
+        }
+      }
+    ],
+    "category_breakdown": {
+      "relationships": {
+        "question_count": 4,
+        "scores": {
+          "answer_correctness": {
+            "mean": 0.40435608373316256,
+            "count": 4,
+            "min": 0.3120621182176986,
+            "max": 0.5074373357959887
+          },
+          "context_precision": {
+            "mean": 0.0,
+            "count": 4,
+            "min": 0.0,
+            "max": 0.0
+          },
+          "context_recall": {
+            "mean": 0.0,
+            "count": 4,
+            "min": 0.0,
+            "max": 0.0
+          },
+          "faithfulness": {
+            "mean": 0.0,
+            "count": 4,
+            "min": 0.0,
+            "max": 0.0
+          }
+        }
+      },
+      "character_abilities": {
+        "question_count": 6,
+        "scores": {
+          "answer_correctness": {
+            "mean": 0.6123753877689976,
+            "count": 6,
+            "min": 0.44022616611403154,
+            "max": 0.7529002932174989
+          },
+          "context_precision": {
+            "mean": 0.0,
+            "count": 6,
+            "min": 0.0,
+            "max": 0.0
+          },
+          "context_recall": {
+            "mean": 0.0,
+            "count": 6,
+            "min": 0.0,
+            "max": 0.0
+          },
+          "faithfulness": {
+            "mean": 0.0,
+            "count": 6,
+            "min": 0.0,
+            "max": 0.0
+          }
+        }
+      },
+      "story_events": {
+        "question_count": 5,
+        "scores": {
+          "answer_correctness": {
+            "mean": 0.7716743053985861,
+            "count": 5,
+            "min": 0.4955894220044263,
+            "max": 0.9363791910214425
+          },
+          "context_precision": {
+            "mean": 0.0,
+            "count": 5,
+            "min": 0.0,
+            "max": 0.0
+          },
+          "context_recall": {
+            "mean": 0.0,
+            "count": 5,
+            "min": 0.0,
+            "max": 0.0
+          },
+          "faithfulness": {
+            "mean": 0.0,
+            "count": 5,
+            "min": 0.0,
+            "max": 0.0
+          }
+        }
+      },
+      "multi_character": {
+        "question_count": 2,
+        "scores": {
+          "answer_correctness": {
+            "mean": 0.7910260782760252,
+            "count": 2,
+            "min": 0.6649532834275589,
+            "max": 0.9170988731244915
+          },
+          "context_precision": {
+            "mean": 0.0,
+            "count": 2,
+            "min": 0.0,
+            "max": 0.0
+          },
+          "context_recall": {
+            "mean": 0.0,
+            "count": 2,
+            "min": 0.0,
+            "max": 0.0
+          },
+          "faithfulness": {
+            "mean": 0.0,
+            "count": 2,
+            "min": 0.0,
+            "max": 0.0
+          }
+        }
+      },
+      "world_building": {
+        "question_count": 3,
+        "scores": {
+          "answer_correctness": {
+            "mean": 0.6135762147049699,
+            "count": 3,
+            "min": 0.42733899415352977,
+            "max": 0.8024285288432813
+          },
+          "context_precision": {
+            "mean": 0.0,
+            "count": 3,
+            "min": 0.0,
+            "max": 0.0
+          },
+          "context_recall": {
+            "mean": 0.0,
+            "count": 3,
+            "min": 0.0,
+            "max": 0.0
+          },
+          "faithfulness": {
+            "mean": 0.0,
+            "count": 3,
+            "min": 0.0,
+            "max": 0.0
+          }
+        }
+      }
+    },
+    "best_performing_questions": [
+      {
+        "question_id": 11,
+        "question": "How did Shanks influence Luffy's decision to become a pirate?",
+        "category": "story_events",
+        "difficulty": "easy",
+        "scores": {
+          "answer_correctness": 0.9363791910214425,
+          "context_precision": 0.0,
+          "context_recall": 0.0,
+          "faithfulness": 0.0
+        }
+      },
+      {
+        "question_id": 19,
+        "question": "Compare the leadership styles of Luffy and Don Krieg as pirate captains.",
+        "category": "multi_character",
+        "difficulty": "hard",
+        "scores": {
+          "answer_correctness": 0.9170988731244915,
+          "context_precision": 0.0,
+          "context_recall": 0.0,
+          "faithfulness": 0.0
+        }
+      },
+      {
+        "question_id": 9,
+        "question": "How did the Straw Hats encounter and defeat Arlong?",
+        "category": "story_events",
+        "difficulty": "medium",
+        "scores": {
+          "answer_correctness": 0.8648582579886459,
+          "context_precision": 0.0,
+          "context_recall": 0.0,
+          "faithfulness": 0.0
+        }
+      }
+    ],
+    "worst_performing_questions": [
+      {
+        "question_id": 17,
+        "question": "What are the Marines and what is their role?",
+        "category": "world_building",
+        "difficulty": "easy",
+        "scores": {
+          "answer_correctness": 0.42733899415352977,
+          "context_precision": 0.0,
+          "context_recall": 0.0,
+          "faithfulness": 0.0
+        }
+      },
+      {
+        "question_id": 13,
+        "question": "How are Helmeppo and Morgan related?",
+        "category": "relationships",
+        "difficulty": "easy",
+        "scores": {
+          "answer_correctness": 0.3177921468339698,
+          "context_precision": 0.0,
+          "context_recall": 0.0,
+          "faithfulness": 0.0
+        }
+      },
+      {
+        "question_id": 15,
+        "question": "How did Nami become part of the Straw Hat Pirates?",
+        "category": "relationships",
+        "difficulty": "medium",
+        "scores": {
+          "answer_correctness": 0.3120621182176986,
+          "context_precision": 0.0,
+          "context_recall": 0.0,
+          "faithfulness": 0.0
+        }
+      }
+    ]
+  }
+}

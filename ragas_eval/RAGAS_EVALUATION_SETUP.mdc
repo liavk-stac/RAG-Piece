@@ -1,0 +1,248 @@
+# RAGAS Evaluation Setup for One Piece RAG Chatbot
+
+## Overview
+This document provides complete instructions for evaluating the One Piece RAG chatbot using the RAGAS library with 20 carefully crafted questions covering the available articles in the database.
+
+## Database Articles Coverage
+The evaluation questions cover these articles from your database:
+- Monkey D. Luffy (Main protagonist)
+- Roronoa Zoro (Swordsman)
+- Nami (Navigator)
+- Usopp (Sniper)
+- Sanji (Cook)
+- Straw Hat Pirates (Crew)
+- Shanks (Yonko)
+- Buggy (Clown pirate)
+- Kuro (Cat pirate)
+- Don Krieg (Armored pirate)
+- Arlong (Fish-man pirate)
+- Alvida (First antagonist)
+- Koby (Marine)
+- Helmeppo (Marine)
+- Morgan (Marine)
+- Smoker (Marine)
+- Marines (Organization)
+- East Blue (Location)
+- Gol D. Roger (Pirate King)
+- Grand Line (Location)
+- Devil Fruit (Power system)
+
+## Directory Structure
+```
+ragas_eval/
+├── RAGAS_EVALUATION_SETUP.mdc     # This file
+├── requirements.txt                # Dependencies
+├── data/
+│   ├── questions_and_answers.json  # 20 Q&A pairs
+│   ├── collected_responses.json    # RAG system responses (generated)
+│   └── evaluation_results.json     # RAGAS scores (generated)
+├── scripts/
+│   ├── collect_responses.py        # Get responses from RAG system
+│   ├── run_ragas_evaluation.py     # Execute RAGAS evaluation
+│   └── analyze_results.py          # Analyze and report results
+└── results/
+    ├── detailed_report.json        # Per-question scores
+    └── summary_report.md            # Human-readable summary
+```
+
+## 20 Evaluation Questions and Ground Truth Answers
+
+### Character Abilities & Powers (6 questions)
+
+**Question 1:**
+- **Q**: "What are Monkey D. Luffy's Devil Fruit powers and how do they work?"
+- **A**: "Luffy ate the Gomu Gomu no Mi (Gum-Gum Fruit), a Paramecia-type Devil Fruit that gives his body rubber properties. This allows him to stretch his limbs, bounce back from blunt attacks, and be immune to electricity. He uses techniques like Gomu Gomu no Pistol and Gear transformations."
+
+**Question 2:**
+- **Q**: "What fighting style and weapons does Roronoa Zoro use?"
+- **A**: "Zoro is a swordsman who uses the Three Sword Style (Santoryu), wielding one sword in each hand and one in his mouth. He can also fight with one or two swords. His goal is to become the world's greatest swordsman."
+
+**Question 3:**
+- **Q**: "What are Sanji's fighting abilities and cooking skills?"
+- **A**: "Sanji is the cook of the Straw Hat Pirates who fights using only his legs to preserve his hands for cooking. He uses powerful kicks and has a strong sense of chivalry, refusing to fight women. He's an expert chef who can cook almost anything."
+
+**Question 4:**
+- **Q**: "What are Don Krieg's weapons and armor capabilities?"
+- **A**: "Don Krieg wears heavily armored battle gear with multiple weapons including the Daisenso (Battle Spear), gatling guns, explosive projectiles, and the Kenzan Mantle (spiked cape). His armor provides both offense and defense in battle."
+
+**Question 5:**
+- **Q**: "What are Arlong's abilities as a Fish-man?"
+- **A**: "Arlong is a Fish-man with shark-like features, giving him superior strength underwater, sharp regenerating teeth, and the ability to breathe underwater. He can swim at high speeds and has enhanced physical strength compared to humans."
+
+**Question 6:**
+- **Q**: "What Devil Fruit power does Alvida have and what does it do?"
+- **A**: "Alvida ate the Sube Sube no Mi (Slip-Slip Fruit), a Paramecia-type Devil Fruit that makes her skin smooth and slippery. Physical attacks slide off her harmlessly, she can skate on surfaces, and it transformed her from obese to slim and beautiful."
+
+### Story Events & Battles (5 questions)
+
+**Question 7:**
+- **Q**: "How did Luffy first meet and recruit Zoro?"
+- **A**: "Luffy found Zoro tied up at a Marine base as punishment. After learning Zoro's dream to become the world's greatest swordsman, Luffy freed him and Zoro agreed to join his crew, becoming the first member of the Straw Hat Pirates."
+
+**Question 8:**
+- **Q**: "What happened during Luffy's battle with Captain Kuro?"
+- **A**: "Captain Kuro planned to fake his death and steal Kaya's fortune. Luffy fought Kuro to protect Usopp's village and Kaya. Despite Kuro's speed and cat-claw weapons, Luffy defeated him and exposed his evil plan."
+
+**Question 9:**
+- **Q**: "How did the Straw Hats encounter and defeat Arlong?"
+- **A**: "The Straw Hats went to Arlong Park to help Nami, who was forced to work for Arlong to buy back her village. Luffy destroyed Arlong Park and defeated Arlong in battle, freeing Nami and her village from Arlong's tyranny."
+
+**Question 10:**
+- **Q**: "What was the outcome of Don Krieg's encounter with Dracule Mihawk?"
+- **A**: "Mihawk easily destroyed Don Krieg's entire fifty-ship fleet. Krieg and some survivors barely escaped under cover of a storm, returning to East Blue with only their flagship damaged. This demonstrated the vast power difference between East Blue and Grand Line pirates."
+
+**Question 11:**
+- **Q**: "How did Shanks influence Luffy's decision to become a pirate?"
+- **A**: "Shanks was Luffy's childhood hero who inspired his dream of becoming a pirate. When Luffy was in danger, Shanks saved him but lost his left arm to a Sea King. Before leaving, Shanks gave Luffy his straw hat, making him promise to return it when he becomes a great pirate."
+
+### Character Relationships (4 questions)
+
+**Question 12:**
+- **Q**: "What is the relationship between Koby and Luffy?"
+- **A**: "Koby was initially Alvida's cabin boy whom Luffy helped gain courage to pursue his dream of joining the Marines. Despite being on opposite sides (pirate vs Marine), they maintain a friendship and mutual respect for each other's dreams."
+
+**Question 13:**
+- **Q**: "How are Helmeppo and Morgan related?"
+- **A**: "Helmeppo is the son of Marine Captain Morgan. Initially spoiled and cowardly, relying on his father's authority, Helmeppo later reformed and became a proper Marine alongside Koby under Garp's training."
+
+**Question 14:**
+- **Q**: "What is the connection between Buggy and Gol D. Roger?"
+- **A**: "Buggy was a member of Gol D. Roger's pirate crew as a cabin boy, serving alongside Shanks. After Roger's execution, Buggy became a pirate captain himself, though he never achieved the same level of success as his former crewmate Shanks."
+
+**Question 15:**
+- **Q**: "How did Nami become part of the Straw Hat Pirates?"
+- **A**: "Nami initially worked with and against the Straw Hats due to her obligation to Arlong. After Luffy defeated Arlong and freed her village, she officially joined the crew as their navigator, fulfilling her dream to map the world."
+
+### World Building & Organizations (3 questions)
+
+**Question 16:**
+- **Q**: "What is the East Blue and why is it significant?"
+- **A**: "East Blue is one of the four seas in the One Piece world, known as the weakest sea. However, it's the birthplace of many significant figures including Gol D. Roger, Monkey D. Luffy, Roronoa Zoro, and other notable pirates and Marines."
+
+**Question 17:**
+- **Q**: "What are the Marines and what is their role?"
+- **A**: "The Marines are the military sea force of the World Government, responsible for maintaining law and order across the seas. They fight against pirates and other criminals, with ranks including Captain, Vice Admiral, and Admiral."
+
+**Question 18:**
+- **Q**: "What is the Grand Line and why do pirates want to go there?"
+- **A**: "The Grand Line is the most dangerous sea route in the One Piece world, where the Pirate King Gol D. Roger found the legendary treasure 'One Piece.' Pirates seek to reach it to find this treasure and prove their strength, but it's extremely perilous with unpredictable weather and powerful enemies."
+
+### Complex Multi-Character Questions (2 questions)
+
+**Question 19:**
+- **Q**: "Compare the leadership styles of Luffy and Don Krieg as pirate captains."
+- **A**: "Luffy leads through inspiration, friendship, and protecting his crew's dreams, earning genuine loyalty. Don Krieg ruled through fear, intimidation, and superior firepower, commanding a large fleet but lacking true bonds with his subordinates. Luffy's approach creates stronger, more dedicated crew members."
+
+**Question 20:**
+- **Q**: "How do the dreams of the main Straw Hat Pirates connect to their roles on the ship?"
+- **A**: "Each Straw Hat's dream aligns with their role: Luffy (captain) wants to be Pirate King, Zoro (swordsman) wants to be the world's greatest swordsman, Nami (navigator) wants to map the world, Usopp (sniper) wants to be a brave warrior, and Sanji (cook) seeks the All Blue. Their dreams motivate their dedication to the crew."
+
+## Setup Instructions
+
+### Step 1: Install Dependencies
+Create `requirements.txt`:
+```
+ragas>=0.1.0
+openai>=1.0.0
+pandas>=2.0.0
+numpy>=1.24.0
+datasets>=2.14.0
+```
+
+Install with:
+```bash
+cd ragas_eval
+pip install -r requirements.txt
+```
+
+### Step 2: Environment Setup
+Ensure your `.env` file contains:
+```
+OPENAI_API_KEY=your_openai_api_key_here
+```
+
+### Step 3: Create Data Files
+Create `data/questions_and_answers.json` with the 20 Q&A pairs above in this format:
+```json
+[
+  {
+    "question_id": 1,
+    "question": "What are Monkey D. Luffy's Devil Fruit powers and how do they work?",
+    "ground_truth": "Luffy ate the Gomu Gomu no Mi (Gum-Gum Fruit)...",
+    "category": "character_abilities",
+    "difficulty": "easy"
+  }
+]
+```
+
+### Step 4: Implementation Scripts
+
+#### collect_responses.py
+- Connects to your RAG system
+- Sends each question to the agent pipeline
+- Collects: generated answers, retrieved contexts, metadata
+- Saves to `data/collected_responses.json`
+
+#### run_ragas_evaluation.py
+- Loads questions, ground truth, and collected responses
+- Runs RAGAS evaluation for 4 metrics:
+  - Answer Correctness
+  - Context Precision  
+  - Context Recall
+  - Faithfulness
+- Saves detailed results
+
+#### analyze_results.py
+- Processes RAGAS scores
+- Generates summary statistics
+- Identifies best/worst performing questions
+- Creates human-readable report
+
+### Step 5: Expected Output Format
+
+#### Evaluation Results Structure:
+```json
+{
+  "overall_scores": {
+    "answer_correctness": 0.85,
+    "context_precision": 0.78,
+    "context_recall": 0.82,
+    "faithfulness": 0.91
+  },
+  "per_question_scores": [...],
+  "category_breakdown": {
+    "character_abilities": {...},
+    "story_events": {...},
+    "relationships": {...},
+    "world_building": {...},
+    "multi_character": {...}
+  },
+  "failure_analysis": {
+    "lowest_scoring_questions": [...],
+    "common_issues": [...],
+    "recommendations": [...]
+  }
+}
+```
+
+## Success Criteria
+Target scores for a well-performing RAG system:
+- **Answer Correctness**: > 0.75
+- **Context Precision**: > 0.70  
+- **Context Recall**: > 0.75
+- **Faithfulness**: > 0.80
+
+## Next Steps
+1. Create the directory structure
+2. Install dependencies
+3. Create the questions_and_answers.json file
+4. Implement the three Python scripts
+5. Run evaluation and analyze results
+6. Use insights to improve the RAG system
+
+## Notes
+- All questions are designed to be answerable with your current database
+- Questions cover diverse topics and difficulty levels
+- Focus on text-only evaluation (no image analysis)
+- Evaluation uses OpenAI GPT models for scoring accuracy
+- Results will identify specific areas for RAG system improvement

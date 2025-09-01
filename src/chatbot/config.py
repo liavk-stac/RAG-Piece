@@ -33,6 +33,7 @@ class ChatbotConfig:
     AGENT_MAX_RETRIES: int = 3  # Maximum retry attempts for agent execution
     PIPELINE_EXECUTION_TIMEOUT: int = 300  # Total pipeline execution timeout (seconds)
     AGENT_SELECTION_THRESHOLD: float = 0.7  # Confidence threshold for agent selection
+    ENABLE_IMAGE_RETRIEVAL_AGENT: bool = True  # Enable/disable image retrieval agent (disabled for RAGAS eval)
     
     # === MEMORY SETTINGS ===
     CONVERSATION_MEMORY_WINDOW: int = 10  # Number of conversation turns to remember
@@ -83,12 +84,12 @@ class ChatbotConfig:
     VISION_DESCRIPTION_DETAIL: str = "high"  # Detail level: low, medium, high
     
     # === LOGGING SETTINGS ===
-    LOG_LEVEL: str = "INFO"  # Logging level (DEBUG, INFO, WARNING, ERROR)
+    LOG_LEVEL: str = "WARNING"  # Logging level (DEBUG, INFO, WARNING, ERROR) - Reduced for RAGAS eval
     ENABLE_VERBOSE_LOGGING: bool = False  # Enable detailed logging
     LOG_TO_FILE: bool = True  # Log to file in addition to console
     LOG_FILE_PATH: str = "logs/one_piece_pipeline.log"  # Main pipeline log file
-    ENABLE_PIPELINE_LOGGING: bool = True  # Enable comprehensive pipeline logging
-    ENABLE_LLM_CALL_LOGGING: bool = True  # Log all LLM API calls
+    ENABLE_PIPELINE_LOGGING: bool = False  # Enable comprehensive pipeline logging - Disabled for speed
+    ENABLE_LLM_CALL_LOGGING: bool = False  # Log all LLM API calls - Disabled for speed
     ENABLE_LANGCHAIN_LOGGING: bool = False  # Enable LangChain verbose logging
     LOG_MAX_SIZE: int = 100 * 1024 * 1024  # Max log file size (100MB)
     LOG_BACKUP_COUNT: int = 5  # Number of backup log files
