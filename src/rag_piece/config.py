@@ -25,7 +25,7 @@ class RAGConfig:
     # === BM25 PARAMETERS ===
     BM25_K1: float = 1.2                # term frequency saturation
     BM25_B: float = 0.75                # length normalization
-    BM25_CANDIDATES: int = 100           # candidates from first step
+    BM25_CANDIDATES: int = 700           # candidates from first step
     
     # === KEYWORD EXTRACTION ===
     KEYWORDS_PER_CHUNK: int = 10         # top keywords to extract per chunk
@@ -38,10 +38,10 @@ class RAGConfig:
     
     # === FIELD BOOSTING ===
     CONTENT_BOOST: float = 1.0             # base content weight
-    ARTICLE_NAME_BOOST: float = 3.0        # article name mentions
-    SUB_ARTICLE_NAME_BOOST: float = 2.8    # sub-article name relevance
-    SECTION_NAME_BOOST: float = 2.5        # section title relevance
-    SUB_SECTION_BOOST: float = 2.0         # sub-section title relevance
+    ARTICLE_NAME_BOOST: float = 2.0        # article name mentions
+    SUB_ARTICLE_NAME_BOOST: float = 1.8    # sub-article name relevance
+    SECTION_NAME_BOOST: float = 1.5        # section title relevance
+    SUB_SECTION_BOOST: float = 1.25         # sub-section title relevance
     KEYWORDS_BOOST: float = 1.8            # BM25-extracted keywords
     
     # === SEMANTIC SEARCH ===
