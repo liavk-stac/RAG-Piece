@@ -94,6 +94,32 @@ class SearchAgent(BaseAgent):
         # Process and format results
         processed_results = self._process_search_results(search_results, input_data)
         
+        # Log RAG retrieval with complete metadata
+        if hasattr(self, 'pipeline_logger'):
+            # Extract chunks and scores for logging
+            chunks = [result.get('content', '') for result in processed_results]
+            scores = [result.get('combined_score', 0.0) for result in processed_results]
+            
+            # Get search metadata for logging
+            search_metadata = {
+                'search_parameters': search_query,
+                'search_performance': {
+                    'query_enhancement': True,
+                    'context_integration': bool(input_data.conversation_history),
+                    'one_piece_terms_used': len(search_query.get('one_piece_terms', [])),
+                    'search_engine_used': 'SearchEngine',
+                    'hybrid_search': True,
+                },
+                'query_modifications': search_query.get('modifications', []),
+            }
+            
+            self.pipeline_logger.log_rag_retrieval(
+                input_data.query, 
+                processed_results, 
+                scores, 
+                search_metadata
+            )
+        
         # Generate search summary
         search_summary = {
             'query': input_data.query,
@@ -216,12 +242,34 @@ class SearchAgent(BaseAgent):
             f"Detected_terms: {', '.join(one_piece_terms) if one_piece_terms else 'none'}\n"
             "Label:"
         )
+        # Log LLM call for search strategy detection
+        if hasattr(self, 'pipeline_logger'):
+            self.pipeline_logger.log_llm_call(
+                agent_name="SEARCH_AGENT",
+                prompt=prompt,
+                response="",
+                tokens_used=0,
+                system_message=system_message
+            )
+        
         label = self.llm_client.generate_text(
             prompt,
             system_message,
             max_tokens=10,
             temperature=0.0
-        ).strip().lower()
+        )
+        
+        # Log LLM response for search strategy detection
+        if hasattr(self, 'pipeline_logger'):
+            self.pipeline_logger.log_llm_call(
+                agent_name="SEARCH_AGENT",
+                prompt=prompt,
+                response=label,
+                tokens_used=10,
+                system_message=system_message
+            )
+        
+        label = label.strip().lower()
         # Normalize any unexpected output
         allowed = {
             'character_search','location_search','timeline_search','explanatory_search',
@@ -246,7 +294,27 @@ Please enhance this query for searching a One Piece knowledge database. Consider
 
 Enhanced query:"""
             
+            # Log LLM call for query enhancement
+            if hasattr(self, 'pipeline_logger'):
+                self.pipeline_logger.log_llm_call(
+                    agent_name="SEARCH_AGENT",
+                    prompt=prompt,
+                    response="",
+                    tokens_used=0,
+                    system_message=system_message
+                )
+            
             enhanced_query = self.llm_client.generate_text(prompt, system_message, max_tokens=100)
+            
+            # Log LLM response for query enhancement
+            if hasattr(self, 'pipeline_logger'):
+                self.pipeline_logger.log_llm_call(
+                    agent_name="SEARCH_AGENT",
+                    prompt=prompt,
+                    response=enhanced_query,
+                    tokens_used=100,
+                    system_message=system_message
+                )
             
             # Clean up the response
             enhanced_query = enhanced_query.strip().strip('"')

@@ -38,7 +38,7 @@ def main():
         _clear_previous_data(logger)
         
         # Initialize components
-        text_scraper = OneWikiScraper(max_images=20)
+        text_scraper = OneWikiScraper(max_images=6)
         csv_scraper = CSVWikiScraper(
             request_delay=config.CSV_REQUEST_DELAY,
             save_to_files=config.SAVE_CSV_FILES_FOR_DEBUG

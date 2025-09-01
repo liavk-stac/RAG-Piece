@@ -214,7 +214,27 @@ class RouterAgent(BaseAgent):
         
         What is the primary intent of this query? Respond with only the intent category."""
         
+        # Log LLM call for intent classification
+        if hasattr(self, 'pipeline_logger'):
+            self.pipeline_logger.log_llm_call(
+                agent_name="ROUTER_AGENT",
+                prompt=prompt,
+                response="",
+                tokens_used=0,
+                system_message=system_message
+            )
+        
         llm_response = self.llm_client.generate_text(prompt, system_message, max_tokens=50)
+        
+        # Log LLM response for intent classification
+        if hasattr(self, 'pipeline_logger'):
+            self.pipeline_logger.log_llm_call(
+                agent_name="ROUTER_AGENT",
+                prompt=prompt,
+                response=llm_response,
+                tokens_used=50,
+                system_message=system_message
+            )
         
         # Parse LLM response
         intent_text = llm_response.strip().upper()

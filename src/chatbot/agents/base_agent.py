@@ -13,6 +13,7 @@ import time
 from enum import Enum
 
 from ..config import ChatbotConfig
+from ..utils.pipeline_logger import get_pipeline_logger
 
 
 class AgentType(Enum):
@@ -69,6 +70,7 @@ class BaseAgent(ABC):
         self.config = config
         self.agent_type = agent_type
         self.logger = self._setup_logger()
+        self.pipeline_logger = get_pipeline_logger(config)
         self.execution_count = 0
         self.total_execution_time = 0.0
         self.success_count = 0
@@ -124,18 +126,41 @@ class BaseAgent(ABC):
         start_time = time.time()
         self.execution_count += 1
         
+        # Pipeline logging - agent start
+        operation = f"Execute {self.agent_type.value} agent"
+        input_dict = {
+            'query': input_data.query,
+            'modality': input_data.modality,
+            'session_id': input_data.session_id,
+            'has_image': input_data.image_data is not None,
+            'context_keys': list(input_data.context.keys()) if input_data.context else [],
+            'full_context': input_data.context,
+            'conversation_history': input_data.conversation_history
+        }
+        self.pipeline_logger.log_agent_start(self.agent_type.value, operation, input_dict)
+        
         try:
             self.logger.info(f"Executing {self.agent_type.value} agent")
             self.logger.debug(f"Input: {input_data}")
             
             # Validate input
             if not self._validate_input(input_data):
-                return AgentOutput(
+                execution_time = time.time() - start_time
+                error_output = AgentOutput(
                     success=False,
                     error_message="Invalid input data",
                     confidence_score=0.0,
-                    execution_time=time.time() - start_time
+                    execution_time=execution_time
                 )
+                
+                # Pipeline logging - agent end (failure)
+                self.pipeline_logger.log_agent_end(
+                    self.agent_type.value, operation, 
+                    output_data={'error': 'Invalid input data'}, 
+                    execution_time=execution_time, success=False
+                )
+                
+                return error_output
             
             # Execute agent-specific logic
             result = self._execute_agent(input_data)
@@ -145,6 +170,14 @@ class BaseAgent(ABC):
             self._update_performance_metrics(execution_time, True)
             
             self.logger.info(f"Agent execution completed successfully in {execution_time:.2f}s")
+            
+            # Pipeline logging - agent end (success)
+            # Log the complete result data
+            self.pipeline_logger.log_agent_end(
+                self.agent_type.value, operation, 
+                output_data=result, 
+                execution_time=execution_time, success=True
+            )
             
             return AgentOutput(
                 success=True,
@@ -160,6 +193,11 @@ class BaseAgent(ABC):
             
             self.logger.error(error_msg, exc_info=True)
             self._update_performance_metrics(execution_time, False)
+            
+            # Pipeline logging - agent error
+            self.pipeline_logger.log_agent_error(
+                self.agent_type.value, operation, e, input_dict
+            )
             
             return AgentOutput(
                 success=False,

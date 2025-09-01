@@ -22,7 +22,7 @@ class OneWikiScraper:
     # Class-level cache for sub-articles to avoid duplicate API calls
     _sub_articles_cache = {}
     
-    def __init__(self, max_images: int = 20, request_delay: float = 1.0):
+    def __init__(self, max_images: int = 6, request_delay: float = 1.0):
         self.max_images = max_images
         self.request_delay = request_delay
         self.logger = logging.getLogger("rag_piece.scraper")

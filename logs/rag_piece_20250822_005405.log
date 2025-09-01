@@ -1,9 +1,0 @@
-2025-08-22 00:54:05,372 - rag_piece - INFO - setup_logging:61 - Logging initialized - Level: INFO, File: logs\rag_piece_20250822_005405.log
-2025-08-22 00:54:05,374 - rag_piece - INFO - main:25 - Starting CSV scraper test
-2025-08-22 00:54:05,379 - rag_piece.csv_scraper - INFO - scrape_article_to_csv:46 - Scraping article for CSV: Conomi Islands
-2025-08-22 00:54:05,381 - rag_piece.csv_scraper - INFO - _find_sub_articles:81 - Finding sub-articles for: Conomi Islands
-2025-08-22 00:54:07,078 - rag_piece.csv_scraper - INFO - _find_sub_articles:114 - Found 0 sub-articles
-2025-08-22 00:54:07,465 - rag_piece.csv_scraper - INFO - _extract_tables:196 - Found 6 total tables in Conomi Islands
-2025-08-22 00:54:07,477 - rag_piece.csv_scraper - INFO - _extract_tables:215 - Extracted table 1: Citizens[] (4 rows, 1 columns)
-2025-08-22 00:54:07,481 - rag_piece.csv_scraper - INFO - _convert_tables_to_csv:459 - Created CSV: Conomi_Islands_Citizens.csv
-2025-08-22 00:54:07,482 - rag_piece.csv_scraper - INFO - scrape_article_to_csv:65 - Completed CSV scraping: Conomi Islands (1 CSV files created)

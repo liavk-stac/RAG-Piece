@@ -16,6 +16,7 @@ from ..agents import (
     ImageRetrievalAgent, ResponseAgent, TimelineAgent
 )
 from ..agents.base_agent import AgentInput, AgentOutput
+from ..utils.pipeline_logger import get_pipeline_logger
 
 
 @dataclass
@@ -43,6 +44,7 @@ class ChatbotOrchestrator:
         """Initialize the chatbot orchestrator."""
         self.config = config
         self.logger = self._setup_logger()
+        self.pipeline_logger = get_pipeline_logger(config)
         
         # Initialize all agents
         self.agents = self._initialize_agents()
@@ -123,12 +125,16 @@ class ChatbotOrchestrator:
         """
         start_time = time.time()
         
+        # Pipeline logging - start
+        if session_id:
+            self.current_session_id = session_id
+        elif not self.current_session_id:
+            self._start_new_session()
+        
+        modality = 'multimodal' if image_data else 'text'
+        self.pipeline_logger.start_pipeline(query, self.current_session_id, modality)
+        
         try:
-            # Start or continue session
-            if session_id:
-                self.current_session_id = session_id
-            elif not self.current_session_id:
-                self._start_new_session()
             
             # Create conversation turn
             conversation_turn = ConversationTurn(
@@ -185,11 +191,21 @@ class ChatbotOrchestrator:
             
             self.logger.info(f"Query processed successfully in {conversation_turn.processing_time:.2f}s")
             
+            # Pipeline logging - end (success)
+            total_time = time.time() - start_time
+            self.pipeline_logger.end_pipeline(True, total_time, pipeline_result.get('agent_outputs', {}))
+            
+            # Log complete pipeline output
+            self.pipeline_logger.log_pipeline_output(response, pipeline_result.get('agent_outputs', {}))
+            
             return response
             
         except Exception as e:
             processing_time = time.time() - start_time
             self.logger.error(f"Query processing failed: {e}", exc_info=True)
+            
+            # Pipeline logging - end (failure)
+            self.pipeline_logger.end_pipeline(False, processing_time, {})
             
             # Update failure metrics
             self.failed_responses += 1

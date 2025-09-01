@@ -41,7 +41,7 @@ class ChatbotConfig:
     MAX_MEMORY_SIZE: int = 1000  # Maximum memory entries to store
     
     # === TOOL SETTINGS ===
-    RAG_SEARCH_LIMIT: int = 20  # Maximum search results from RAG database
+    RAG_SEARCH_LIMIT: int = 4  # Maximum search results from RAG database
     IMAGE_PROCESSING_TIMEOUT: int = 60  # Image processing timeout (seconds)
     TOOL_EXECUTION_TIMEOUT: int = 30  # Individual tool execution timeout (seconds)
     MAX_TOOL_RETRIES: int = 2  # Maximum retry attempts for tools
@@ -86,7 +86,12 @@ class ChatbotConfig:
     LOG_LEVEL: str = "INFO"  # Logging level (DEBUG, INFO, WARNING, ERROR)
     ENABLE_VERBOSE_LOGGING: bool = False  # Enable detailed logging
     LOG_TO_FILE: bool = True  # Log to file in addition to console
-    LOG_FILE_PATH: str = "logs/chatbot.log"  # Log file path
+    LOG_FILE_PATH: str = "logs/one_piece_pipeline.log"  # Main pipeline log file
+    ENABLE_PIPELINE_LOGGING: bool = True  # Enable comprehensive pipeline logging
+    ENABLE_LLM_CALL_LOGGING: bool = True  # Log all LLM API calls
+    ENABLE_LANGCHAIN_LOGGING: bool = False  # Enable LangChain verbose logging
+    LOG_MAX_SIZE: int = 100 * 1024 * 1024  # Max log file size (100MB)
+    LOG_BACKUP_COUNT: int = 5  # Number of backup log files
     
     # === WEB INTERFACE SETTINGS ===
     WEB_HOST: str = "localhost"  # Web interface host

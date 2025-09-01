@@ -163,12 +163,32 @@ class ImageRetrievalAgent(BaseAgent):
             
             What type of image would be most relevant for this query? Analyze the intent and provide a structured response."""
             
+            # Log LLM call for intent analysis
+            if hasattr(self, 'pipeline_logger'):
+                self.pipeline_logger.log_llm_call(
+                    agent_name="IMAGE_RETRIEVAL_AGENT",
+                    prompt=prompt,
+                    response="",
+                    tokens_used=0,
+                    system_message=system_message
+                )
+            
             llm_response = self.llm_client.generate_text(
                 prompt, 
                 system_message, 
                 max_tokens=300, 
                 temperature=0.1
             )
+            
+            # Log LLM response for intent analysis
+            if hasattr(self, 'pipeline_logger'):
+                self.pipeline_logger.log_llm_call(
+                    agent_name="IMAGE_RETRIEVAL_AGENT",
+                    prompt=prompt,
+                    response=llm_response,
+                    tokens_used=300,
+                    system_message=system_message
+                )
             
             # Parse LLM response
             intent_analysis = self._parse_intent_response(llm_response)
@@ -422,12 +442,32 @@ Respond with only the numerical score (e.g., 0.85)."""
         try:
             system_message = "You are an expert at evaluating image relevance. Respond with only a numerical score between 0.0 and 1.0."
             
+            # Log LLM call for image scoring
+            if hasattr(self, 'pipeline_logger'):
+                self.pipeline_logger.log_llm_call(
+                    agent_name="IMAGE_RETRIEVAL_AGENT",
+                    prompt=prompt,
+                    response="",
+                    tokens_used=0,
+                    system_message=system_message
+                )
+            
             llm_response = self.llm_client.generate_text(
                 prompt, 
                 system_message, 
                 max_tokens=10, 
                 temperature=0.1
             )
+            
+            # Log LLM response for image scoring
+            if hasattr(self, 'pipeline_logger'):
+                self.pipeline_logger.log_llm_call(
+                    agent_name="IMAGE_RETRIEVAL_AGENT",
+                    prompt=prompt,
+                    response=llm_response,
+                    tokens_used=10,
+                    system_message=system_message
+                )
             
             # Extract numerical score
             import re

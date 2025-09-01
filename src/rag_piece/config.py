@@ -84,36 +84,7 @@ class RAGConfig:
     
     # === ARTICLES TO SCRAPE ===
     ARTICLES_TO_SCRAPE: List[str] = field(default_factory=lambda: [
-    "Monkey D. Luffy",
-    "Roronoa Zoro",
-    "Nami",
-    "Usopp",
-    "Sanji",
-    "Straw Hat Pirates",
-    "Shanks",
-    "Buggy",
-    "Kuro",
-    "Don Krieg",
-    "Arlong",
-    "Alvida",
-    "Koby",
-    "Helmeppo",
-    "Morgan",
-    "Smoker",
-    "Marines",
-    "East Blue",
-    "Foosha Village",
-    "Shells Town",
-    "Orange Town",
-    "Syrup Village",
-    "Baratie",
-    "Arlong Park",
-    "Loguetown",
-    "Gol D. Roger",
-    "Portgas D. Rouge",
-    "Pirate King",
-    "Grand Line",
-    "Devil Fruit"
+    "Don Krieg"
 ])  # list of One Piece Wiki articles to scrape
     
     def __post_init__(self):

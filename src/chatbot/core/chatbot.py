@@ -91,7 +91,7 @@ class OnePieceChatbot:
                 session_id=session_id
             )
             
-            self.logger.info("Text question processed successfully")
+            # Text question processed successfully
             return response
             
         except Exception as e:

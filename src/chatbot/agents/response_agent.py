@@ -258,8 +258,28 @@ Please synthesize this information into a comprehensive response that:
 
 Response:"""
         
+        # Log the full LLM prompt and system message
+        if hasattr(self, 'pipeline_logger'):
+            self.pipeline_logger.log_llm_call(
+                agent_name="RESPONSE_AGENT",
+                prompt=prompt,
+                response="",  # Will be updated after call
+                tokens_used=0,  # Will be updated after call
+                system_message=system_message
+            )
+        
         # Generate response using LLM
         llm_response = self.llm_client.generate_text(prompt, system_message, max_tokens=800)
+        
+        # Log the LLM response
+        if hasattr(self, 'pipeline_logger'):
+            self.pipeline_logger.log_llm_call(
+                agent_name="RESPONSE_AGENT",
+                prompt=prompt,
+                response=llm_response,
+                tokens_used=800,  # Approximate, real token count would need API response parsing
+                system_message=system_message
+            )
         
         # Determine response type
         response_type = self._determine_response_type(agent_outputs, input_data)
@@ -280,10 +300,10 @@ Response:"""
             'sources_used': sources_used,
             'processing_summary': processing_summary,
             'agent_outputs_summary': {
-                'search_results_count': len(agent_outputs.get('search_agent', {}).get('results', [])),
-                'image_analysis_success': bool(agent_outputs.get('image_analysis_agent', {}).get('success', False)),
-                'reasoning_applied': bool(agent_outputs.get('reasoning_agent')),
-                'timeline_info_available': bool(agent_outputs.get('timeline_agent')),
+                'search_results_count': len(agent_outputs.get('search', {}).get('results', [])),
+                'image_analysis_success': bool(agent_outputs.get('image_analysis', {}).get('success', False)),
+                'reasoning_applied': bool(agent_outputs.get('reasoning')),
+                'timeline_info_available': bool(agent_outputs.get('timeline')),
                 'llm_generated': True,
             }
         }
@@ -790,7 +810,7 @@ Response:"""
         context_parts = []
         
         # Add search results summary
-        search_info = agent_outputs.get('search_agent', {})
+        search_info = agent_outputs.get('search', {})
         if search_info and 'results' in search_info:
             results = search_info['results']
             if results:
@@ -800,17 +820,17 @@ Response:"""
                     context_parts.append(f"  {i+1}. {content}")
         
         # Add image analysis summary
-        image_info = agent_outputs.get('image_analysis_agent', {})
+        image_info = agent_outputs.get('image_analysis', {})
         if image_info and 'description' in image_info:
             context_parts.append(f"Image Analysis: {image_info['description']}")
         
         # Add reasoning summary
-        reasoning_info = agent_outputs.get('reasoning_agent', {})
+        reasoning_info = agent_outputs.get('reasoning', {})
         if reasoning_info and 'logical_connections' in reasoning_info:
             context_parts.append(f"Logical Analysis: {reasoning_info['logical_connections']}")
         
         # Add timeline summary
-        timeline_info = agent_outputs.get('timeline_agent', {})
+        timeline_info = agent_outputs.get('timeline', {})
         if timeline_info and 'chronological_context' in timeline_info:
             context_parts.append(f"Timeline Context: {timeline_info['chronological_context']}")
         

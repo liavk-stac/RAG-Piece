@@ -401,7 +401,7 @@ def chat():
             # Text-only query
             try:
                 response = chatbot.ask(message, session_id)
-                logger.info("Text query processed successfully")
+                # Text query processed successfully
             except Exception as e:
                 error_msg = f"Text processing failed: {str(e)}"
                 logger.error(f"Text processing error: {e}")
@@ -450,18 +450,29 @@ def serve_image(image_path):
     return send_from_directory(images_dir, image_path)
 
 if __name__ == '__main__':
-    logger.info("🚀 Starting Image-Enabled One Piece Chatbot Web Interface...")
-    logger.info("=" * 60)
+    # Clear the log file at startup
+    try:
+        with open("logs/one_piece_pipeline.log", "w") as f:
+            f.write("")
+        print("Log file cleared for new session")
+    except Exception as e:
+        print(f"Warning: Could not clear log file: {e}")
+    
+    print("Starting One Piece Chatbot Web Interface...")
+    print("Access the interface at: http://127.0.0.1:5000")
+    print("Press Ctrl+C to stop the server")
+    
+    # Disable noisy logging
+    import logging
+    logging.getLogger('werkzeug').setLevel(logging.ERROR)
+    logging.getLogger('httpx').setLevel(logging.ERROR)
+    logging.getLogger('openai').setLevel(logging.ERROR)
+    logging.getLogger('urllib3').setLevel(logging.ERROR)
+    
     try:
         config = ChatbotConfig()
         chatbot = OnePieceChatbot(config)
-        logger.info("✅ Web interface created successfully")
-        logger.info("🌐 Starting Flask server on http://127.0.0.1:5000")
-        logger.info("=" * 60)
-        logger.info("🌐 Server is running! Open your browser to: http://127.0.0.1:5000")
-        logger.info("⏹️  Press Ctrl+C to stop the server")
-        logger.info("=" * 60)
         app.run(debug=False, host='127.0.0.1', port=5000)
     except Exception as e:
-        logger.error(f"Error starting server: {e}")
+        print(f"Error starting server: {e}")
         sys.exit(1)
